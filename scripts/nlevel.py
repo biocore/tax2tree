@@ -7,13 +7,13 @@ from cogent.util.misc import parse_command_line_parameters
 from sys import exit, stdout
 
 __author__ = "Daniel McDonald"
-__copyright__ = "Copyright 2007-2011"
-__credits__ = ["Daniel McDonald"] 
+__copyright__ = "Copyright 2011, The tax2tree project"
+__credits__ = ["Daniel McDonald"]
 __license__ = "GPL"
 __version__ = "1.0"
 __maintainer__ = "Daniel McDonald"
-__email__ = "daniel.mcdonald@colorado.edu"
-__status__ = "Production"
+__email__ = "mcdonadt@colorado.edu"
+__status__ = "Development"
 
 script_info = {}
 script_info['brief_description'] = "Map a taxonomy onto a tree"

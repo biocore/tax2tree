@@ -7,6 +7,15 @@ is not necessarily 100%. Many of these inputs are written with specific tests
 in mind.
 """
 
+__author__ = "Daniel McDonald"
+__copyright__ = "Copyright 2011, The tax2tree project"
+__credits__ = ["Daniel McDonald"]
+__license__ = "GPL"
+__version__ = "1.0"
+__maintainer__ = "Daniel McDonald"
+__email__ = "mcdonadt@colorado.edu"
+__status__ = "Development"
+
 from cogent.util.unit_test import TestCase, main
 from t2t.nlevel import load_consensus_map, collect_names_at_ranks_counts, \
         load_tree, decorate_name_relative_freqs, set_ranksafe, pick_names, \

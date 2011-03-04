@@ -2,6 +2,15 @@
 
 """Reroot a tree based on tips"""
 
+__author__ = "Daniel McDonald"
+__copyright__ = "Copyright 2011, The tax2tree project"
+__credits__ = ["Daniel McDonald"]
+__license__ = "GPL"
+__version__ = "1.0"
+__maintainer__ = "Daniel McDonald"
+__email__ = "mcdonadt@colorado.edu"
+__status__ = "Development"
+
 def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     """Returns a tree rerooted based on tipnames"""
     node = tree.lowestCommonAncestor(tipnames)
