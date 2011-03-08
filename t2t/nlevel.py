@@ -37,12 +37,15 @@ def has_badname(name):
     """Boolean, if name contains a badname"""
     return len(BAD_NAMES_REGEX.findall(name)) > 0
 
-def load_consensus_map(lines, append_rank, verbose=False):
+def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True, verbose=False):
     """Input is tab delimited mapping from tipname to a consensus string
 
     tipname is the tipnames in the loaded tree
     consensus string must be len(RANK_ORDER), and '; ' delimited
     
+    check_bad : check for bad names
+    check_min_inform: check for informative information below domain
+
     If append_rank is True, rank information will be appended on. For instance,
     the name at the 0-index position of the consensus will be joined with 
     RANK_ORDER[0] 
@@ -73,13 +76,15 @@ def load_consensus_map(lines, append_rank, verbose=False):
                    names[idx].split('__')[1] == '':
                 names[idx] = None
 
-        if names[1] is None:
-            names = [None] * n_ranks
+        if check_min_inform:
+            if names[1] is None:
+                names = [None] * n_ranks
 
         # clean up bad names
-        for idx, name in enumerate(names):
-            if name is not None and has_badname(name.lower()):
-                names[idx] = None
+        if check_bad:
+            for idx, name in enumerate(names):
+                if name is not None and has_badname(name.lower()):
+                    names[idx] = None
 
         # append rank if needed
         if append_rank:

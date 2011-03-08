@@ -19,7 +19,8 @@ import os
 from subprocess import Popen
 from t2t.nlevel import nlevel_workflow, load_consensus_map, load_tree, \
         make_consensus_tree
-from t2t.reroot import reroot
+from t2t.util import reroot, combine_alignments
+
 
 script_info = {}
 script_info['brief_description'] = "tax2tree workflow script"
@@ -43,19 +44,6 @@ script_info['optional_options']=[make_option('--reroot','-r',dest='reroot',\
                     help="Seed alignment with taxonomy information")]
 
 script_info['version'] = __version__
-
-def combine_alignments(fp1, fp2):
-    """take two filepointers, combine the files"""
-    seqs1 = dict(MinimalFastaParser(fp1))
-    seqs2 = dict(MinimalFastaParser(fp2))
-
-    if set(seqs1.keys()).intersection(set(seqs2.keys())):
-        raise ValueError, "Conflicting sequence ids between seed and classify alignments"
-
-    combined = seqs1
-    combined.update(seqs2)
-
-    return combined
 
 def main():
     option_parser, opts, args = parse_command_line_parameters(**script_info)
