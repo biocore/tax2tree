@@ -33,6 +33,12 @@ BAD_NAMES = ['environmental sample', 'uncultured', 'UNNAMEABLE', 'unclassified',
 
 BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(lower, BAD_NAMES)))
 
+def determine_rank_order(con):
+    """Determines dynamically rank order based on first input con string"""
+    order = [s[0] for s in con.split('; ')]
+    global RANK_ORDER
+    RANK_ORDER = order
+
 def has_badname(name):
     """Boolean, if name contains a badname"""
     return len(BAD_NAMES_REGEX.findall(name)) > 0
@@ -62,11 +68,12 @@ def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True
         id_, consensus = line.strip().split('\t')
 
         names = consensus.split('; ')
+
+        if 'Eukaryota' in names[0] or 'Unclassified' in names[0]:
+            names = [None] * n_ranks
+
         if assert_nranks:
             assert len(names) == n_ranks
-
-        if 'Eukaryota' in names[0]:
-            names = [None] * n_ranks
 
         # clean up missing names
         for idx in range(n_ranks):
@@ -214,7 +221,6 @@ def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
 
         n.ConsensusRelFreq = res_freq
         n.ValidRelFreq = res_valid
-
 def set_ranksafe(tree, verbose=False):
     """Decorates RankSafe on tree
 
@@ -231,7 +237,7 @@ def set_ranksafe(tree, verbose=False):
             continue
 
         for rank, names in node.ConsensusRelFreq.items():
-            # this is strict    
+            # this is strict  
             if sum(map(lambda x: x >= 0.5, names.values())) == 1:
                 node.RankSafe[rank] = True
 
@@ -365,7 +371,6 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips, \
                     else:
                         tie_nodes.append(None)
                 node_to_keep = tiebreak_f(tie_nodes)
-
                 for node,score in node_scores_sorted:
                     if node == node_to_keep:
                         continue
@@ -374,7 +379,6 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips, \
             else:
                 for node,score in node_scores_sorted[1:]:
                     node.RankNames[rank] = None
-
 def score_tree(tree, verbose=False):
     """Scores the tree based on RankNameScores and tip coverage
 
@@ -694,7 +698,6 @@ def pull_consensus_strings(tree, verbose=False):
 
     constrings = []
     rank_order_rev = dict([(r,i) for i,r in enumerate(RANK_ORDER)])
-
     # start at the tip and travel up
     for tip in tree.tips():
         consensus_string = ['%s__' % r for r in RANK_ORDER]

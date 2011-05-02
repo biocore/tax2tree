@@ -9,7 +9,8 @@ from t2t.nlevel import load_consensus_map, load_tree, \
         decorate_name_relative_freqs,  set_ranksafe, pick_names, \
         name_node_score_fold, score_tree, set_preliminary_name_and_rank, \
         make_consensus_tree, backfill_names_gap, commonname_promotion, \
-        make_names_unique, pull_consensus_strings, save_bootstraps
+        make_names_unique, pull_consensus_strings, save_bootstraps, \
+        determine_rank_order
 from sys import exit, stdout
 
 __author__ = "Daniel McDonald"
@@ -61,13 +62,17 @@ def main():
         exit(1)
 
     append_rank = False
+    con_map_fp = open(opts.consensus_map)
+    seed_con = con_map_fp.readline().strip().split('\t')[1]
+    determine_rank_order(seed_con)
+    
     tipname_map = load_consensus_map(open(opts.consensus_map),
                                      append_rank,
                                      opts.verbose)
     tree = load_tree(open(opts.tree), tipname_map, opts.verbose)
     counts = collect_names_at_ranks_counts(tree, opts.verbose)
     decorate_ntips(tree)
-    decorate_name_relative_freqs(tree, counts, 3, opts.verbose)
+    decorate_name_relative_freqs(tree, counts, 2, opts.verbose)
     set_ranksafe(tree, opts.verbose)
     pick_names(tree, opts.verbose)
     name_node_score_fold(tree, verbose=opts.verbose)
