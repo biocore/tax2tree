@@ -7,6 +7,7 @@ make_consensus_tree
 etc...
 """
 from nlevel import RANK_ORDER
+
 def get_consensus_stats(consensus_map):
     """Returns consensus stats, expects rank prefix
 

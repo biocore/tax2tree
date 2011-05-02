@@ -39,6 +39,6 @@ setup(name='tax2tree',
       maintainer_email=__email__,
       url='http://tax2tree.sourceforge.net',
       packages=['t2t'],
-      scripts=['scripts/t2t_workflow'],
+      scripts=['scripts/nlevel'],
       long_description=long_description,
 )

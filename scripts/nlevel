@@ -4,6 +4,12 @@
 
 from optparse import make_option
 from cogent.util.misc import parse_command_line_parameters
+from t2t.nlevel import load_consensus_map, load_tree, \
+        collect_names_at_ranks_counts, decorate_ntips, \
+        decorate_name_relative_freqs,  set_ranksafe, pick_names, \
+        name_node_score_fold, score_tree, set_preliminary_name_and_rank, \
+        make_consensus_tree, backfill_names_gap, commonname_promotion, \
+        make_names_unique, pull_consensus_strings, save_bootstraps
 from sys import exit, stdout
 
 __author__ = "Daniel McDonald"
@@ -20,7 +26,7 @@ script_info['brief_description'] = "Map a taxonomy onto a tree"
 script_info['script_description'] = """Take an input taxonomy and attempt to place the names on the tree in a reasonable fashion."""
 
 script_info['script_usage'] = []
-script_info['script_usage'].append(("""Example:""","""python nlevel.py --consensus-map=taxonomy.txt --tree=tree.ntree --output=my_result.ntree"""))
+script_info['script_usage'].append(("Basic usage command", """Example:""","""nlevel --consensus-map=taxonomy.txt --tree=tree.ntree --output=my_result.ntree"""))
 
 script_info['output_description'] = """The output is both a tree and its associated taxonomy strings.'"""
 
@@ -31,8 +37,6 @@ script_info['required_options']=[make_option('--tree','-t',dest='tree',\
               make_option('--output','-o', dest='output',\
                     help='Output file name')]
 
-script_info['optional_options']=[make_option('--verbose',dest='verbose',
-                  action='store_true',default=False)]
 script_info['version'] = __version__
 
 def main():

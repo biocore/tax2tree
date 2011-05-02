@@ -9,4 +9,4 @@ __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
 
-__all__ = ['nlevel','reroot']
+__all__ = ['nlevel','reroot','consensus']

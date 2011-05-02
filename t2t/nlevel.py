@@ -37,7 +37,7 @@ def has_badname(name):
     """Boolean, if name contains a badname"""
     return len(BAD_NAMES_REGEX.findall(name)) > 0
 
-def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True, verbose=False):
+def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True, assert_nranks=True, verbose=False):
     """Input is tab delimited mapping from tipname to a consensus string
 
     tipname is the tipnames in the loaded tree
@@ -62,7 +62,8 @@ def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True
         id_, consensus = line.strip().split('\t')
 
         names = consensus.split('; ')
-        assert len(names) == n_ranks
+        if assert_nranks:
+            assert len(names) == n_ranks
 
         if 'Eukaryota' in names[0]:
             names = [None] * n_ranks
@@ -819,7 +820,8 @@ def nlevel_workflow(tree, contree_lookup, verbose=False):
     counts = collect_names_at_ranks_counts(tree,verbose)
     decorate_ntips(tree)
     print "DECORATING WITH NTIPS, SHOULD USE RANGENODE METHODS"
-    decorate_name_relative_freqs(tree, counts, 3, verbose)
+    min_count = 2
+    decorate_name_relative_freqs(tree, counts, min_count, verbose)
     set_ranksafe(tree, verbose)
     pick_names(tree, verbose)
     name_node_score_fold(tree, verbose)
@@ -839,7 +841,8 @@ def main(args=argv):
     tree = load_tree(open(opts.tree), tipname_map, opts.verbose) 
     counts = collect_names_at_ranks_counts(tree, opts.verbose)
     decorate_ntips(tree)
-    decorate_name_relative_freqs(tree, counts, 3, opts.verbose)
+    min_count = 2
+    decorate_name_relative_freqs(tree, counts, min_count, opts.verbose)
     set_ranksafe(tree, opts.verbose)
     pick_names(tree, opts.verbose)
     name_node_score_fold(tree, verbose=opts.verbose)
@@ -851,7 +854,7 @@ def main(args=argv):
     contree, contree_lookup = make_consensus_tree(tipname_map.values())
     backfill_names_gap(tree, contree_lookup, opts.verbose)
     commonname_promotion(tree)
-    make_names_unique(tree, opts.verbose)
+    make_names_unique(tree, append_suffix=False, verbose=opts.verbose)
 
     
     constrings = pull_consensus_strings(tree, opts.verbose)
