@@ -45,7 +45,19 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     new_tree = tree.rootedAt(tmp_nodename)
     new_root = new_tree.getNodeMatchingName(tmp_nodename)
     new_root.Name = None
-    
+
+    # remove the stupid edge names that rootedAt -> unrootedDeepcopy adds in
+    for n in new_tree.nontips():
+        if n.Name and n.Name.startswith('edge.'):
+            edge_split = n.Name.split('.')
+            
+            # verify the edge name is of the form we expect
+            try:
+                tmp = int(edge_split[1])
+                n.Name = None
+            except:
+                pass
+
     # collapse single descendents if they exist
     new_tree.prune()
 

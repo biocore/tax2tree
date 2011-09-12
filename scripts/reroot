@@ -51,7 +51,7 @@ def main():
     rerooted = reroot(tree, tipnames)
     
     f = open(opts.output,'w')
-    f.write(tree.getNewick(with_distances=True))
+    f.write(rerooted.getNewick(with_distances=True))
     f.close()
 
 if __name__ == '__main__':
