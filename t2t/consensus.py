@@ -7,7 +7,86 @@ make_consensus_tree
 etc...
 """
 from nlevel import RANK_ORDER
+from numpy import zeros, nan, where, logical_or, isnan
 
+def taxa_score(master, reps):
+    """Score each taxonomy string based on contradictions observed in reps"""
+    n_ranks = len(RANK_ORDER)
+    master_ids = frozenset(master.keys())
+
+    master_order = master.keys()
+    master_rows = dict([(k,idx) for idx,k in enumerate(master_order)])
+    master_cons = [master[k] for k in master_order]
+
+    scores = zeros((len(master_ids), n_ranks), dtype=float)
+
+    n_reps = 0
+    for rep in reps:
+        n_reps += 1
+
+        for id_, con in rep.iteritems():
+            if id_ not in master_ids:
+                raise KeyError, "Unknown key %s in replicate" % id_
+            
+            row = master_rows[id_]
+
+            for rank,name in enumerate(con):
+                if name == master_cons[row][rank]:
+                    scores[row, rank] += 1
+        # missing taxa are not considered contradictions
+        missing_taxa = master_ids - frozenset(rep.keys())
+        for k in missing_taxa:
+            row = master_rows[k]
+            scores[row] += 1
+
+    scores /= n_reps
+
+    # slice and dice the scores
+    return dict([(k, scores[master_rows[k]]) for k in master])
+
+def merge_taxa_strings_and_scores(master, scores):
+    """Merge taxa strings and their scores, return {id_:(taxa,score)}"""
+    return dict([(k,zip(v,scores[k])) for k,v in master.items()])
+
+def taxa_score_hash(master, reps):
+    """Score each taxonomy string based on contradictions observed in reps"""
+    n_ranks = len(RANK_ORDER)
+
+    master_order = master.keys()
+    scores = zeros((len(master_order), n_ranks), dtype=float)
+    master_hash = hash_cons(master, master_order, n_ranks)
+
+    n_reps = 0
+    for rep in reps:
+        n_reps += 1
+        rep_hash = hash_cons(rep, master_order, n_ranks)
+        # where the taxons are equal to the master
+        # or if the the taxon is not present in the replicate
+        scores += where(logical_or(rep_hash == master_hash, rep_hash == 0),1,0)
+    scores /= n_reps
+
+    # slice and dice the scores
+    return dict([(k, scores[idx]) for idx,k in enumerate(master_order)])
+
+def hash_cons(cons, order, n_ranks):
+    """Returns a numpy array of hash values for the cons
+    
+    NOTE: expects that cons are always specified even if the taxon name does not
+    exist. In other words, the following are acceptable for missing fieids:
+    [None, 'None', k__, p__, etc...]. It is _NOT_ okay to use the empty string
+    at a field. The python hash method returns 0 on an empty string, but never 
+    otherwise and this method treats 0 specially.
+    """
+    hashes = zeros((len(order), n_ranks), dtype=long)
+
+    for idx,id_ in enumerate(order):
+        try:
+            hashes[idx] = map(hash, cons[id_])
+        except:
+            pass
+        # defaults to zero if the consensus string isn't represented
+    return hashes
+    
 def get_consensus_stats(consensus_map):
     """Returns consensus stats, expects rank prefix
 

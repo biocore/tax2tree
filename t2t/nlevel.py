@@ -33,6 +33,11 @@ BAD_NAMES = ['environmental sample', 'uncultured', 'UNNAMEABLE', 'unclassified',
 
 BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(lower, BAD_NAMES)))
 
+def set_rank_order(order):
+    """Reset the global RANK_ORDER"""
+    global RANK_ORDER
+    RANK_ORDER = order
+
 def determine_rank_order(con):
     """Determines dynamically rank order based on first input con string"""
     order = [s[0] for s in con.split('; ')]
@@ -73,6 +78,7 @@ def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True
             names = [None] * n_ranks
 
         if assert_nranks:
+            print id_, consensus, len(names), n_ranks
             assert len(names) == n_ranks
 
         # clean up missing names
@@ -469,7 +475,8 @@ def make_consensus_tree(cons_split, check_for_rank=True):
     for node in god_node.traverse():
         if node.Name is None:
             continue
-        if check_for_rank and node.Name.split('__')[1] == '':
+        if check_for_rank and '__' in node.Name and \
+                node.Name.split('__')[1] == '':
             continue
         lookup[node.Name] = node
 
