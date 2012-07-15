@@ -34,8 +34,10 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     node.Parent = None
     new_node = parent.__class__()
     new_node.Name = tmp_nodename
-    new_node.Length = node.Length / 2.0
-    node.Length = node.Length / 2.0
+
+    if hasattr(new_node, 'Length') and new_node.Length:
+        new_node.Length = node.Length / 2.0
+        node.Length = node.Length / 2.0
 
     # add node back to tree and reconnect LCA
     parent.append(new_node)

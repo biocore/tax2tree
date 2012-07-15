@@ -48,7 +48,8 @@ def has_badname(name):
     """Boolean, if name contains a badname"""
     return len(BAD_NAMES_REGEX.findall(name)) > 0
 
-def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True, assert_nranks=True, verbose=False):
+def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True, assert_nranks=True, verbose=False,
+        check_euk_unc=False):
     """Input is tab delimited mapping from tipname to a consensus string
 
     tipname is the tipnames in the loaded tree
@@ -60,6 +61,8 @@ def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True
     If append_rank is True, rank information will be appended on. For instance,
     the name at the 0-index position of the consensus will be joined with 
     RANK_ORDER[0] 
+
+    check_euk_unc : check for eukarayota or unclassified, set to none if found and true
 
     Output is a dictionary mapping tipname to consensus strings split into
     a list.
@@ -74,11 +77,10 @@ def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True
 
         names = consensus.split('; ')
 
-        if 'Eukaryota' in names[0] or 'Unclassified' in names[0]:
+        if check_euk_unc and 'Eukaryota' in names[0] or 'Unclassified' in names[0]:
             names = [None] * n_ranks
 
         if assert_nranks:
-            print id_, consensus, len(names), n_ranks
             assert len(names) == n_ranks
 
         # clean up missing names
@@ -154,6 +156,9 @@ def load_tree(input, tipname_map, verbose=False):
                                        (node.Name, str(node.Parent == None))
                 node.Bootstrap = None
 
+    for tip in tree.tips():
+        if tip.Name:
+            tip.Name = tip.Name.replace("'","")
     return tree
 
 def collect_names_at_ranks_counts(tree, verbose=False):
@@ -434,7 +439,7 @@ def make_consensus_tree(cons_split, check_for_rank=True):
     """Returns a mapping by rank for names to their parent names and counts"""
     god_node = TreeNode(Name=None)
     god_node.Rank = None
-
+    
     base = cons_split[0]
     cur_node = god_node
 
