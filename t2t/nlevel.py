@@ -435,7 +435,7 @@ def set_preliminary_name_and_rank(tree):
             node.Rank = n_ranks - (idx + 1) # adjust for 0-based index
             break
 
-def make_consensus_tree(cons_split, check_for_rank=True):
+def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     """Returns a mapping by rank for names to their parent names and counts"""
     god_node = TreeNode(Name=None)
     god_node.Rank = None
@@ -459,7 +459,7 @@ def make_consensus_tree(cons_split, check_for_rank=True):
         n.ChildLookup = {n.Children[0].Name:n.Children[0]}
 
     # for every consensus string, start at the "god" node
-    for con in cons_split:
+    for idx,con in enumerate(cons_split):
         cur_node = god_node
 
         # for each name, see if we've seen it, if not, add that puppy on
@@ -474,6 +474,9 @@ def make_consensus_tree(cons_split, check_for_rank=True):
                 cur_node.append(new_node)
                 cur_node.ChildLookup[name] = new_node
                 cur_node = new_node
+        
+        if tips is not None:
+            cur_node.append(TreeNode(Name=tips[idx]))
 
     # build an assist lookup dict
     lookup = {}
@@ -700,7 +703,7 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
         else:
             node.Name = '; '.join(node.BackFillNames)
 
-def pull_consensus_strings(tree, verbose=False):
+def pull_consensus_strings(tree, verbose=False, append_prefix=True):
     """Pulls consensus strings off of tree
 
     assumes .Name is set
@@ -712,7 +715,11 @@ def pull_consensus_strings(tree, verbose=False):
     rank_order_rev = dict([(r,i) for i,r in enumerate(RANK_ORDER)])
     # start at the tip and travel up
     for tip in tree.tips():
-        consensus_string = ['%s__' % r for r in RANK_ORDER]
+        if append_prefix:
+            consensus_string = ['%s__' % r for r in RANK_ORDER]
+        else:
+            consensus_string = ['' for r in RANK_ORDER]
+
         tipid = tip.Name
         n = tip.Parent
 

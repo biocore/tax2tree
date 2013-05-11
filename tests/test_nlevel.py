@@ -193,7 +193,7 @@ class NLevelTests(TestCase):
         self.assertEqual(tree.RankSafe, exp_root)
 
     def test_name_node_score_fold(self):
-        """fucking hate taxonomy"""
+        """hate taxonomy"""
         input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
         tipname_map = {'a':['1','2','3','4','5','6','8'],
                        'b':['1','2','3','4','5','6','8'],
@@ -340,6 +340,20 @@ class NLevelTests(TestCase):
         
         obs_root, lookup = make_consensus_tree(input, check_for_rank=False)
 
+        self.assertEqual(obs_root.getNewick(with_distances=False), exp_str)
+        self.assertNotContains(None, lookup)
+
+    def test_make_consensus_tree_withtips(self):
+        """correctly constructs the taxonomy tree with tip info"""
+        input = [['a','b','c','d','e','f','g'],
+                 ['a','b','c',None,None,'x','y'],
+                 ['h','i','j','k','l','m','n'],
+                 ['h','i','j','k','l','m','q'],
+                 ['h','i','j','k','l','m','n']]
+        input_ids = ['1','2','3','4','5']
+        exp_str = "((((((((1)g)f)e)d,((((2)y)x)))c)b)a,(((((((3,5)n,(4)q)m)l)k)j)i)h);"
+
+        obs_root, lookup = make_consensus_tree(input, check_for_rank=False, tips=input_ids)
         self.assertEqual(obs_root.getNewick(with_distances=False), exp_str)
         self.assertNotContains(None, lookup)
 
