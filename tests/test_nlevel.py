@@ -37,12 +37,12 @@ class NLevelTests(TestCase):
         t = TreeNode.from_newick(t_str)
         t.RankNames = ['i',None,None,None] # 1.0 * 6
         t.RankNameScores = [1.0,None,None,None]
-        t.Children[0].RankNames = [None,'e','foo',None] # 0.5 * 3, 0.6 * 3
-        t.Children[0].RankNameScores = [None, 0.5, 0.6, None]
-        t.Children[0].Children[0].RankNames = [None] * 7
-        t.Children[0].Children[1].RankNames = [None] * 7
-        t.Children[1].RankNames = [None] * 7
-        t.Children[1].RankNameScores = [None] * 7
+        t.children[0].RankNames = [None,'e','foo',None] # 0.5 * 3, 0.6 * 3
+        t.children[0].RankNameScores = [None, 0.5, 0.6, None]
+        t.children[0].children[0].RankNames = [None] * 7
+        t.children[0].children[1].RankNames = [None] * 7
+        t.children[1].RankNames = [None] * 7
+        t.children[1].RankNameScores = [None] * 7
         tips = t.tips()
         tips[0].Consensus = [None] * 7
         tips[1].Consensus = [1,3,None,None]
@@ -222,10 +222,10 @@ class NLevelTests(TestCase):
         expc1c1 = [None] * 7
 
         self.assertEqual(tree.RankNames, exp_root)
-        self.assertEqual(tree.Children[0].RankNames, expc0)
-        self.assertEqual(tree.Children[1].RankNames, expc1)
-        self.assertEqual(tree.Children[2].RankNames, expc2)
-        self.assertEqual(tree.Children[1].Children[1].RankNames, expc1c1)
+        self.assertEqual(tree.children[0].RankNames, expc0)
+        self.assertEqual(tree.children[1].RankNames, expc1)
+        self.assertEqual(tree.children[2].RankNames, expc2)
+        self.assertEqual(tree.children[1].children[1].RankNames, expc1c1)
 
     def test_validate_all_paths(self):
         """complains correctly about badpaths"""
@@ -265,9 +265,9 @@ class NLevelTests(TestCase):
 
         #result = best_name_freqs_for_nodes(tree)
 
-        cnode = tree.Children[0]
-        hnode = tree.Children[1]
-        knode = tree.Children[2]
+        cnode = tree.children[0]
+        hnode = tree.children[1]
+        knode = tree.children[2]
         #exp = {0:{'1':[(0.6,tree)]}
         #        1:{'2':[(0.6,tree)]},
         #        2:{'3':[(0.6,tree)]},
@@ -305,10 +305,10 @@ class NLevelTests(TestCase):
         expc2 = [None,None,None,None,None,'foo','8']
         expc1c1 = [None] * 7
 
-        self.assertEqual(tree.Children[0].RankNames, expc0)
-        self.assertEqual(tree.Children[1].RankNames, expc1)
-        self.assertEqual(tree.Children[2].RankNames, expc2)
-        self.assertEqual(tree.Children[1].Children[1].RankNames, expc1c1)
+        self.assertEqual(tree.children[0].RankNames, expc0)
+        self.assertEqual(tree.children[1].RankNames, expc1)
+        self.assertEqual(tree.children[2].RankNames, expc2)
+        self.assertEqual(tree.children[1].children[1].RankNames, expc1c1)
 
     def test_walk_consensus_tree(self):
         """correctly walk consensus tree"""
@@ -370,10 +370,10 @@ class NLevelTests(TestCase):
         tips['j'].Consensus = [1,2,3,4,5,6,8]
         decorate_ntips(tree)
         self.assertEqual(tree.NumTips, 6)
-        self.assertEqual(tree.Children[0].NumTips, 4)
-        self.assertEqual(tree.Children[1].NumTips, 2)
-        self.assertEqual(tree.Children[0].Children[0].NumTips, 2)
-        self.assertEqual(tree.Children[0].Children[1].NumTips, 2)
+        self.assertEqual(tree.children[0].NumTips, 4)
+        self.assertEqual(tree.children[1].NumTips, 2)
+        self.assertEqual(tree.children[0].children[0].NumTips, 2)
+        self.assertEqual(tree.children[0].children[1].NumTips, 2)
 
     def test_get_nearest_named_ancestor(self):
         """correctly get the nearest named ancestor"""
@@ -397,24 +397,24 @@ class NLevelTests(TestCase):
         #exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
         t = TreeNode.from_newick(input)
         t.Rank = 3
-        t.Children[0].Rank = None
-        t.Children[0].Children[0].Rank = None
-        t.Children[0].Children[1].Rank = None
-        t.Children[0].Children[0].Children[0].Rank = 6
-        t.Children[0].Children[0].Children[1].Rank = 6
-        t.Children[0].Children[1].Children[0].Rank = 6
-        t.Children[0].Children[1].Children[1].Rank = 6
+        t.children[0].Rank = None
+        t.children[0].children[0].Rank = None
+        t.children[0].children[1].Rank = None
+        t.children[0].children[0].children[0].Rank = 6
+        t.children[0].children[0].children[1].Rank = 6
+        t.children[0].children[1].children[0].Rank = 6
+        t.children[0].children[1].children[1].Rank = 6
 
         backfill_names_gap(t, lookup)
 
         self.assertEqual(t.BackFillNames, ['o1'])
-        self.assertEqual(t.Children[0].BackFillNames, [])
-        self.assertEqual(t.Children[0].Children[0].BackFillNames, [])
-        self.assertEqual(t.Children[0].Children[1].BackFillNames, [])
-        self.assertEqual(t.Children[0].Children[0].Children[0].BackFillNames, ['f1','g1','s1'])
-        self.assertEqual(t.Children[0].Children[0].Children[1].BackFillNames, ['f1','g1','s2'])
-        self.assertEqual(t.Children[0].Children[1].Children[0].BackFillNames, ['f1','g2','s3'])
-        self.assertEqual(t.Children[0].Children[1].Children[1].BackFillNames, ['f1','g3','s5'])
+        self.assertEqual(t.children[0].BackFillNames, [])
+        self.assertEqual(t.children[0].children[0].BackFillNames, [])
+        self.assertEqual(t.children[0].children[1].BackFillNames, [])
+        self.assertEqual(t.children[0].children[0].children[0].BackFillNames, ['f1','g1','s1'])
+        self.assertEqual(t.children[0].children[0].children[1].BackFillNames, ['f1','g1','s2'])
+        self.assertEqual(t.children[0].children[1].children[0].BackFillNames, ['f1','g2','s3'])
+        self.assertEqual(t.children[0].children[1].children[1].BackFillNames, ['f1','g3','s5'])
 
     def test_backfill_names_dangling(self):
         """correctly fill in dangling missing ranks"""
@@ -434,13 +434,13 @@ class NLevelTests(TestCase):
         exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1';"
         t = TreeNode.from_newick(input)
         t.Rank = 3
-        t.Children[0].Rank = None
-        t.Children[0].Children[0].Rank = None
-        t.Children[0].Children[1].Rank = None
-        t.Children[0].Children[0].Children[0].Rank = 6
-        t.Children[0].Children[0].Children[1].Rank = 6
-        t.Children[0].Children[1].Children[0].Rank = 6
-        t.Children[0].Children[1].Children[1].Rank = 6
+        t.children[0].Rank = None
+        t.children[0].children[0].Rank = None
+        t.children[0].children[1].Rank = None
+        t.children[0].children[0].children[0].Rank = 6
+        t.children[0].children[0].children[1].Rank = 6
+        t.children[0].children[1].children[0].Rank = 6
+        t.children[0].children[1].children[1].Rank = 6
         backfill_names_gap(t, lookup)
         commonname_promotion(t)
         self.assertEqual(t.getNewick(with_distances=False), exp)
