@@ -339,7 +339,7 @@ class NLevelTests(TestCase):
 
         obs_root, lookup = make_consensus_tree(input, check_for_rank=False)
 
-        self.assertEqual(obs_root.getNewick(with_distances=False), exp_str)
+        self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
         self.assertNotContains(None, lookup)
 
     def test_make_consensus_tree_withtips(self):
@@ -353,7 +353,7 @@ class NLevelTests(TestCase):
         exp_str = "((((((((1)g)f)e)d,((((2)y)x)))c)b)a,(((((((3,5)n,(4)q)m)l)k)j)i)h);"
 
         obs_root, lookup = make_consensus_tree(input, check_for_rank=False, tips=input_ids)
-        self.assertEqual(obs_root.getNewick(with_distances=False), exp_str)
+        self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
         self.assertNotContains(None, lookup)
 
     def test_decorate_ntips(self):
@@ -443,7 +443,7 @@ class NLevelTests(TestCase):
         t.children[0].children[1].children[1].Rank = 6
         backfill_names_gap(t, lookup)
         commonname_promotion(t)
-        self.assertEqual(t.getNewick(with_distances=False), exp)
+        self.assertEqual(t.to_newick(with_distances=False), exp)
 
 if __name__ == '__main__':
 
