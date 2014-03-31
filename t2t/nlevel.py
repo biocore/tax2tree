@@ -125,7 +125,7 @@ def load_tree(input, tipname_map, verbose=False):
     else:
         tree = TreeNode.from_newick(input)
 
-    tips = tree.tips()
+    tips = list(tree.tips())
     n_ranks = len(RANK_ORDER)
 
     for idx, tip in enumerate(tips):
@@ -197,7 +197,7 @@ def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
     """
     if verbose:
         print "HYBRID! decorating relative frequencies..."
-    tips = tree.tips()
+    tips = list(tree.tips())
     for tip in tips:
         tip.ConsensusRelFreq = None
 

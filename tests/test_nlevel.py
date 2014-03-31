@@ -43,7 +43,7 @@ class NLevelTests(TestCase):
         t.children[0].children[1].RankNames = [None] * 7
         t.children[1].RankNames = [None] * 7
         t.children[1].RankNameScores = [None] * 7
-        tips = t.tips()
+        tips = list(t.tips())
         tips[0].Consensus = [None] * 7
         tips[1].Consensus = [1,3,None,None]
         tips[2].Consensus = [2,4,5,None]
