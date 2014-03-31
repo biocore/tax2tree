@@ -137,7 +137,7 @@ def load_tree(input, tipname_map, verbose=False):
             print "No consensus for %s" % tip.name
 
     for node in tree.postorder(include_self=True):
-        if node.istip():
+        if node.is_tip():
             continue
         node.TipStart = node.Children[0].TipStart
         node.TipStop = node.Children[-1].TipStop
@@ -243,7 +243,7 @@ def set_ranksafe(tree, verbose=False):
         print "setting ranksafe nodes..."
     for node in tree.traverse(include_self=True):
         node.RankSafe = [False] * 7
-        if node.istip():
+        if node.is_tip():
             continue
 
         for rank, names in node.ConsensusRelFreq.items():
@@ -255,7 +255,7 @@ def decorate_ntips(tree):
     """intelligently set the NumTips attribute on the tree"""
     n_ranks = len(RANK_ORDER)
     for node in tree.postorder(include_self=True):
-        if node.istip():
+        if node.is_tip():
             # set to True if we have consensus information
             node.NumTips = node.Consensus != ([None] * n_ranks)
         else:
@@ -452,7 +452,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     # setup the initial childlookup structure so taht we don't have to
     # always iterate over .Children
     for n in god_node.traverse(include_self=True):
-        if n.istip():
+        if n.is_tip():
             n.ChildLookup = {}
             continue
         n.ChildLookup = {n.Children[0].name:n.Children[0]}
@@ -523,7 +523,7 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
             continue
         if node.Rank is None:
             continue
-        if node.istip():
+        if node.is_tip():
             continue
         # if node is kingdom, more on
         if node.Rank == 0:
@@ -590,7 +590,7 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
 def commonname_promotion(tree):
     """Promote names if possible from BackFillNames"""
     for node in tree.preorder(include_self=True):
-        queue = [c for c in node.Children[:] if not c.istip()]
+        queue = [c for c in node.Children[:] if not c.is_tip()]
         backfill_nodes = []
         push_name = True
 
@@ -598,7 +598,7 @@ def commonname_promotion(tree):
         while queue:
             curr = queue.pop()
             if len(curr.BackFillNames) == 0:
-                queue.extend([c for c in curr.Children[:] if not c.istip()])
+                queue.extend([c for c in curr.Children[:] if not c.is_tip()])
             elif len(curr.BackFillNames) == 1:
                 push_name = False
                 break
@@ -622,7 +622,7 @@ def commonname_promotion(tree):
     #set_names_dict = {}
     # set the .name attribute on the tree based on .BackFillNames
     for node in tree.preorder(include_self=True):
-        if node.istip():
+        if node.is_tip():
             continue
 
         if node.BackFillNames:
