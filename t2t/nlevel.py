@@ -139,8 +139,8 @@ def load_tree(input, tipname_map, verbose=False):
     for node in tree.postorder(include_self=True):
         if node.is_tip():
             continue
-        node.TipStart = node.Children[0].TipStart
-        node.TipStop = node.Children[-1].TipStop
+        node.TipStart = node.children[0].TipStart
+        node.TipStop = node.children[-1].TipStop
         node.Consensus = [None] * n_ranks
 
         if node.name is None:
@@ -259,7 +259,7 @@ def decorate_ntips(tree):
             # set to True if we have consensus information
             node.NumTips = node.Consensus != ([None] * n_ranks)
         else:
-            node.NumTips = reduce(add, [c.NumTips for c in node.Children])
+            node.NumTips = reduce(add, [c.NumTips for c in node.children])
 
 def pick_names(tree, verbose=False):
     """Picks RankSafe names, sets RankNames on tree
@@ -450,12 +450,12 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
         cur_node = new_node
 
     # setup the initial childlookup structure so taht we don't have to
-    # always iterate over .Children
+    # always iterate over .children
     for n in god_node.traverse(include_self=True):
         if n.is_tip():
             n.ChildLookup = {}
             continue
-        n.ChildLookup = {n.Children[0].name:n.Children[0]}
+        n.ChildLookup = {n.children[0].name:n.children[0]}
 
     # for every consensus string, start at the "god" node
     for idx,con in enumerate(cons_split):
@@ -590,7 +590,7 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
 def commonname_promotion(tree):
     """Promote names if possible from BackFillNames"""
     for node in tree.preorder(include_self=True):
-        queue = [c for c in node.Children[:] if not c.is_tip()]
+        queue = [c for c in node.children[:] if not c.is_tip()]
         backfill_nodes = []
         push_name = True
 
@@ -598,7 +598,7 @@ def commonname_promotion(tree):
         while queue:
             curr = queue.pop()
             if len(curr.BackFillNames) == 0:
-                queue.extend([c for c in curr.Children[:] if not c.is_tip()])
+                queue.extend([c for c in curr.children[:] if not c.is_tip()])
             elif len(curr.BackFillNames) == 1:
                 push_name = False
                 break
