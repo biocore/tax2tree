@@ -16,7 +16,7 @@ __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
 
-from cogent.util.unit_test import TestCase, main
+from unittest import TestCase, main
 from t2t.nlevel import load_consensus_map, collect_names_at_ranks_counts, \
         load_tree, decorate_name_relative_freqs, set_ranksafe, pick_names, \
         has_badname, get_nearest_named_ancestor, walk_consensus_tree,\
@@ -162,7 +162,7 @@ class NLevelTests(TestCase):
                     5:{'6':4.0/6},
                     6:{'7':1.0,'8':1.0}}
 
-        self.assertFloatEqual(tree.ConsensusRelFreq, exp_root)
+        self.assertEqual(tree.ConsensusRelFreq, exp_root)
 
     def test_set_ranksafe(self):
         """correctly set ranksafe on tree"""
@@ -337,7 +337,7 @@ class NLevelTests(TestCase):
         obs_root, lookup = make_consensus_tree(input, check_for_rank=False)
 
         self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
-        self.assertNotContains(None, lookup)
+        self.assertNotIn(None, lookup)
 
     def test_make_consensus_tree_withtips(self):
         """correctly constructs the taxonomy tree with tip info"""
@@ -351,7 +351,7 @@ class NLevelTests(TestCase):
 
         obs_root, lookup = make_consensus_tree(input, check_for_rank=False, tips=input_ids)
         self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
-        self.assertNotContains(None, lookup)
+        self.assertNotIn(None, lookup)
 
     def test_decorate_ntips(self):
         """correctly decorate the tree with the NumTips param"""
