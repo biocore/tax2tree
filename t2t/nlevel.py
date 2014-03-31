@@ -5,7 +5,7 @@ from string import lower
 from operator import itemgetter,add
 from numpy import argmin, array, where
 from skbio.core.tree import TreeNode
-from skbio.util.misc import unzip
+from t2t.util import unzip
 import re
 
 __author__ = "Daniel McDonald"

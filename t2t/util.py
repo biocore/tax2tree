@@ -54,4 +54,26 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
 
     return new_tree
 
+def unzip(items):
+    """The inverse of zip
 
+    Parameters
+    ----------
+    items : a nested iteratable
+
+    Returns
+    -------
+    list
+        The unzipped items
+
+    Examples
+    --------
+    >>> from skbio.util.misc import unzip
+    >>> unzip([[1, 2], ['a', 'b']])
+    [[1, 'a'], [2, 'b']]
+
+    """
+    if items:
+        return [list(i) for i in zip(*items)]
+    else:
+        return []

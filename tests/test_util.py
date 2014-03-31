@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from unittest import TestCase, main
-from t2t.util import combine_alignments, reroot
+from t2t.util import combine_alignments, reroot, unzip
 from skbio.core.tree import TreeNode
 
 __author__ = "Daniel McDonald"
@@ -42,6 +42,19 @@ class UtilTests(TestCase):
         exp = "((a,b)c,((d,e)f,(h,i)j));"
         obs = reroot(t, tips)
         self.assertEqual(obs.to_newick(), exp)
+
+    def test_unzip(self):
+        """unzip(items) should be the inverse of zip(*items)"""
+        chars = [list('abcde'), list('ghijk')]
+        numbers = [[1, 2, 3, 4, 5], [0, 0, 0, 0, 0]]
+        strings = [["abcde", "fghij", "klmno"], ['xxxxx'] * 3]
+
+        lists = [chars, numbers, strings]
+        zipped = [zip(*i) for i in lists]
+        unzipped = [unzip(i) for i in zipped]
+
+        for u, l in zip(unzipped, lists):
+            self.assertEqual(u, l)
 
 if __name__ == '__main__':
     main()
