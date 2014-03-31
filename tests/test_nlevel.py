@@ -90,11 +90,11 @@ class NLevelTests(TestCase):
                        'i':['1','2','3','a','5','6','9'],
                        'j':['1','2','3','4','5','6','9']}
         tree = load_tree(input, tipname_map)
-        
-        exp = {0:{'1':6}, 
-               1:{'2':6}, 
-               2:{'3':6}, 
-               3:{'4':2, 'a':2}, 
+
+        exp = {0:{'1':6},
+               1:{'2':6},
+               2:{'3':6},
+               3:{'4':2, 'a':2},
                4:{'5':6},
                5:{'6':6},
                6:{'7':1,'8':1,'9':4}}
@@ -115,21 +115,21 @@ class NLevelTests(TestCase):
         # exp in Name: (tipstart, tipstop, consensus)
         exp = {'a':(0,0,['1','2','3','4','5','6','7']),
                'b':(1,1,['1','2','3','4','5','6','8']),
-               'c':(0,1,[None] * 7), 
-               'd':(2,2,['1','2','3','4','5','6','9']), 
-               'e':(3,3,['1','2','3','4','5','6','10']), 
+               'c':(0,1,[None] * 7),
+               'd':(2,2,['1','2','3','4','5','6','9']),
+               'e':(3,3,['1','2','3','4','5','6','10']),
                'f':(4,4,[None] * 7),
-               'g':(3,4,[None] * 7), 
-               'h':(2,4,[None] * 7), 
-               'i':(5,5,['1','2','3','4','5','6','12']), 
-               'j':(6,6,['1','2','3','4','5','6','13']), 
+               'g':(3,4,[None] * 7),
+               'h':(2,4,[None] * 7),
+               'i':(5,5,['1','2','3','4','5','6','12']),
+               'j':(6,6,['1','2','3','4','5','6','13']),
                'k':(5,6,[None] * 7),
                'l':(0,6,[None] * 7)}
 
         obstree = load_tree(input, tipname_map, verbose=False)
         obs = {}
         for node in obstree.traverse(include_self=True):
-            obs[node.Name] = (node.TipStart, node.TipStop, node.Consensus)
+            obs[node.name] = (node.TipStart, node.TipStop, node.Consensus)
 
         self.assertEqual(obs, exp)
 
@@ -337,7 +337,7 @@ class NLevelTests(TestCase):
                  ['h','i','j','k','l','m','q'],
                  ['h','i','j','k','l','m','n']]
         exp_str = "(((((((g)f)e)d,(((y)x)))c)b)a,((((((n,q)m)l)k)j)i)h);"
-        
+
         obs_root, lookup = make_consensus_tree(input, check_for_rank=False)
 
         self.assertEqual(obs_root.getNewick(with_distances=False), exp_str)
@@ -361,7 +361,7 @@ class NLevelTests(TestCase):
         """correctly decorate the tree with the NumTips param"""
         input = "(((a,b)c,(d,e,f)g)h,(i,j)k)l;"
         tree = DndParser(input)
-        tips = dict([(tip.Name, tip) for tip in tree.tips()])
+        tips = dict([(tip.name, tip) for tip in tree.tips()])
         tips['a'].Consensus = [1,2,3,4,5,6,7]
         tips['b'].Consensus = [None,None,None,5,None,None,None]
         tips['d'].Consensus = [1,2,3,4,5,6,8]
@@ -392,9 +392,9 @@ class NLevelTests(TestCase):
         consensus_tree = DndParser("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
         rank_lookup = {'s':6,'g':5,'f':4,'o':3,'c':2,'p':1,'k':0}
         for n in consensus_tree.traverse(include_self=True):
-            n.Rank = rank_lookup[n.Name[0]]
+            n.Rank = rank_lookup[n.name[0]]
         input = "((((1)s1,(2)s2),((3)s3,(4)s5)))o1;"
-        lookup = dict([(n.Name, n) for n in consensus_tree.traverse(include_self=True)])
+        lookup = dict([(n.name, n) for n in consensus_tree.traverse(include_self=True)])
         #exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
         t = DndParser(input)
         t.Rank = 3
@@ -421,7 +421,7 @@ class NLevelTests(TestCase):
         """correctly fill in dangling missing ranks"""
         consensus_tree = DndParser("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
         input = "((((1),(2)),((3),(4))))'o1; f1';"
-        lookup = dict([(n.Name, n) for n in consensus_tree.traverse(include_self=True)])
+        lookup = dict([(n.name, n) for n in consensus_tree.traverse(include_self=True)])
         #exp = "((((1),(2)),((3),(4))))'o1; f1';"
 
     def test_commonname_promotion(self):
@@ -429,9 +429,9 @@ class NLevelTests(TestCase):
         consensus_tree = DndParser("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
         rank_lookup = {'s':6,'g':5,'f':4,'o':3,'c':2,'p':1,'k':0}
         for n in consensus_tree.traverse(include_self=True):
-            n.Rank = rank_lookup[n.Name[0]]
+            n.Rank = rank_lookup[n.name[0]]
         input = "((((1)s1,(2)s2),((3)s3,(4)s5)))o1;"
-        lookup = dict([(n.Name, n) for n in consensus_tree.traverse(include_self=True)])
+        lookup = dict([(n.name, n) for n in consensus_tree.traverse(include_self=True)])
         exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1';"
         t = DndParser(input)
         t.Rank = 3
