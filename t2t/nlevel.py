@@ -152,7 +152,7 @@ def load_tree(input, tipname_map, verbose=False):
             except:
                 if verbose:
                     print "Could not save bootstrap %s, node is root: %s" % \
-                                       (node.name, str(node.Parent == None))
+                                       (node.name, str(node.parent == None))
                 node.Bootstrap = None
 
     for tip in tree.tips():
@@ -494,9 +494,9 @@ def get_nearest_named_ancestor(node):
 
     returns None if there does not exist a named ancestor
     """
-    curr = node.Parent
+    curr = node.parent
     while curr is not None and curr.name is None:
-        curr = curr.Parent
+        curr = curr.parent
     return curr
 
 def backfill_names_gap(tree, consensus_lookup, verbose=False):
@@ -519,7 +519,7 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
             node.BackFillNames = []
             continue
 
-        if node.Parent is None:
+        if node.parent is None:
             continue
         if node.Rank is None:
             continue
@@ -563,7 +563,7 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
     """
     node = lookup[name]
     names = [name]
-    curr = node.Parent
+    curr = node.parent
 
     for i in range(1,levels):
         if curr.Rank is None:
@@ -580,7 +580,7 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
             names.append('%s__' % RANK_ORDER[curr.Rank])
         else:
             names.append(curr.name)
-        curr = curr.Parent
+        curr = curr.parent
 
     if reverse:
         names = names[::-1]
@@ -720,10 +720,10 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
             consensus_string = ['' for r in RANK_ORDER]
 
         tipid = tip.name
-        n = tip.Parent
+        n = tip.parent
 
         # walk up the tree filling in the consensus string
-        while n.Parent:
+        while n.parent:
             if n.name:
                 if '; ' in n.name:
                     names = n.name.split('; ')
@@ -733,7 +733,7 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
                 else:
                     rank_idx = rank_order_rev[n.name[0]]
                     consensus_string[rank_idx] = n.name
-            n = n.Parent
+            n = n.parent
 
         # if there is a name at the root we need to make sure we grab it
         if n.name:
@@ -765,11 +765,11 @@ def save_bootstraps(tree, verbose=False):
                     n.name = ':'.join([str(n.Bootstrap), n.name])
 
 def getpath(foo):
-    while foo.Parent:
+    while foo.parent:
         print foo.name
         if hasattr(foo, 'RankNames'):
             print foo.RankNames
-        foo = foo.Parent
+        foo = foo.parent
     print foo.name
     if hasattr(foo, 'RankNames'):
         print foo.RankNames
@@ -794,8 +794,8 @@ def validate_all_paths(tree):
     # helper getpath method
     def getpath_f(n):
         path = []
-        n = n.Parent
-        while n.Parent:
+        n = n.parent
+        while n.parent:
             if n.name is not None:
                 if ':' in n.name:
                     names = n.name.split(':',1)
@@ -804,7 +804,7 @@ def validate_all_paths(tree):
                 else:
                     if not is_float(n.name):
                         path.append(n.name)
-            n = n.Parent
+            n = n.parent
         if n.name is not None:
             path.append(n.name)
 
