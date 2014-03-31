@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 
 from optparse import OptionParser, make_option
-from cogent.parse.tree import DndParser
 from string import lower
 from operator import itemgetter,add
-from cogent.core.tree import TreeNode
 from numpy import argmin, array, where
-from cogent.util.misc import unzip
+from skbio.core.tree import TreeNode
+from skbio.util.misc import unzip
 import re
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
 __credits__ = ["Daniel McDonald"]
-__license__ = "GPL"
+__license__ = "BSD"
 __version__ = "1.0"
 __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
@@ -54,13 +53,13 @@ def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True
 
     tipname is the tipnames in the loaded tree
     consensus string must be len(RANK_ORDER), and '; ' delimited
-    
+
     check_bad : check for bad names
     check_min_inform: check for informative information below domain
 
     If append_rank is True, rank information will be appended on. For instance,
-    the name at the 0-index position of the consensus will be joined with 
-    RANK_ORDER[0] 
+    the name at the 0-index position of the consensus will be joined with
+    RANK_ORDER[0]
 
     check_euk_unc : check for eukarayota or unclassified, set to none if found and true
 
@@ -114,9 +113,9 @@ def load_consensus_map(lines, append_rank, check_bad=True, check_min_inform=True
 
 def load_tree(input, tipname_map, verbose=False):
     """Returns a PhyloNode tree decorated with helper attrs
-    
+
     Helper attrs include Consensus, TipStart and TipStop. Nontips and tips that
-    do not have consensus information will have [None] * len(RANK_ORDER) set 
+    do not have consensus information will have [None] * len(RANK_ORDER) set
     as Consensus
     """
     if verbose:
@@ -124,7 +123,7 @@ def load_tree(input, tipname_map, verbose=False):
     if isinstance(input, TreeNode):
         tree = input
     else:
-        tree = DndParser(input)
+        tree = TreeNode.from_newick(input)
 
     tips = tree.tips()
     n_ranks = len(RANK_ORDER)
@@ -132,10 +131,10 @@ def load_tree(input, tipname_map, verbose=False):
     for idx, tip in enumerate(tips):
         tip.TipStart = idx
         tip.TipStop = idx
-        tip.Consensus = tipname_map.get(tip.Name, [None] * 7)
+        tip.Consensus = tipname_map.get(tip.name, [None] * 7)
 
         if verbose and tip.Consensus is None:
-            print "No consensus for %s" % tip.Name
+            print "No consensus for %s" % tip.name
 
     for node in tree.postorder(include_self=True):
         if node.istip():
@@ -144,28 +143,28 @@ def load_tree(input, tipname_map, verbose=False):
         node.TipStop = node.Children[-1].TipStop
         node.Consensus = [None] * n_ranks
 
-        if node.Name is None:
+        if node.name is None:
             node.Bootstrap = None
         else:
             try:
-                node.Bootstrap = float(node.Name)
-                node.Name = None
+                node.Bootstrap = float(node.name)
+                node.name = None
             except:
                 if verbose:
                     print "Could not save bootstrap %s, node is root: %s" % \
-                                       (node.Name, str(node.Parent == None))
+                                       (node.name, str(node.Parent == None))
                 node.Bootstrap = None
 
     for tip in tree.tips():
-        if tip.Name:
-            tip.Name = tip.Name.replace("'","")
+        if tip.name:
+            tip.name = tip.name.replace("'","")
     return tree
 
 def collect_names_at_ranks_counts(tree, verbose=False):
     """Returns total name counts for a given name at a given rank
-    
+
     Assumes the Consensus attribute is present on the tips
-    
+
     Returns a 2d dict, [RANK][name] -> count
     """
     if verbose:
@@ -206,7 +205,7 @@ def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
 
     for n in tree.nontips(include_self=True):
         counts = dict([(i, {}) for i in range(n_ranks)])
-       
+
         # build of counts of the names at the tips per rank
         cons_at_tips = [tip.Consensus for tip in tips[n.TipStart:n.TipStop+1]]
         for con in cons_at_tips:
@@ -216,7 +215,7 @@ def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
                 if cur_name not in counts[cur_rank]:
                     counts[cur_rank][cur_name] = 0
                 counts[cur_rank][cur_name] += 1
-        
+
         res_freq = dict([(i, {}) for i in range(n_ranks)])
         res_valid = dict([(i, {}) for i in range(n_ranks)])
 
@@ -235,7 +234,7 @@ def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
 def set_ranksafe(tree, verbose=False):
     """Decorates RankSafe on tree
 
-    RankSafe is a len(RANK_ORDER) boolean list. True means at that rank, there 
+    RankSafe is a len(RANK_ORDER) boolean list. True means at that rank, there
     is only a single name with > 50% relative abundance
 
     NOTE: tree is modified in place
@@ -248,7 +247,7 @@ def set_ranksafe(tree, verbose=False):
             continue
 
         for rank, names in node.ConsensusRelFreq.items():
-            # this is strict  
+            # this is strict
             if sum(map(lambda x: x >= 0.5, names.values())) == 1:
                 node.RankSafe[rank] = True
 
@@ -264,7 +263,7 @@ def decorate_ntips(tree):
 
 def pick_names(tree, verbose=False):
     """Picks RankSafe names, sets RankNames on tree
-    
+
     NOTE: tree is modified in place
     """
     if verbose:
@@ -328,8 +327,8 @@ def min_tips(nodes):
 def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips, \
         verbose=False):
     """Compute name scores for internal nodes, pick the 'best'
-    
-    For this method, we traverse the tree once building up a dict of scores 
+
+    For this method, we traverse the tree once building up a dict of scores
     for names and nodes, we can then pick the 'best' node out of the dict
     to avoid horrible lookups in the tree
     """
@@ -345,8 +344,8 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips, \
             if name is None:
                 continue
 
-            # precision in this case is the percent of informative tips that 
-            # descend that are of the name relative to the number of 
+            # precision in this case is the percent of informative tips that
+            # descend that are of the name relative to the number of
             # informative tips that descend
             precision = node.ValidRelFreq[rank][name]
 
@@ -394,7 +393,7 @@ def score_tree(tree, verbose=False):
     """Scores the tree based on RankNameScores and tip coverage
 
     if the node has a name in RankNames, multiply score in RankNameScores @ idx
-    by the number of tips that are "valid".. Sum these scores, divide sum by 
+    by the number of tips that are "valid".. Sum these scores, divide sum by
     total number of tips covered (a tip can be counted multiple times)
     """
     total_score = 0.0
@@ -414,14 +413,14 @@ def score_tree(tree, verbose=False):
 
 def set_preliminary_name_and_rank(tree):
     """Sets names and rank at a node
-    
+
     This method is destructive: will destroy the Name attribute on tree
     """
     n_ranks = len(RANK_ORDER)
     empty_ranknames = [None] * n_ranks
 
     for node in tree.nontips(include_self=True):
-        node.Name = None
+        node.name = None
         node.Rank = None
 
         if empty_ranknames == node.RankNames:
@@ -431,7 +430,7 @@ def set_preliminary_name_and_rank(tree):
         for idx, name in enumerate(node.RankNames[::-1]):
             if name is None:
                 continue
-            node.Name = name
+            node.name = name
             node.Rank = n_ranks - (idx + 1) # adjust for 0-based index
             break
 
@@ -439,11 +438,11 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     """Returns a mapping by rank for names to their parent names and counts"""
     god_node = TreeNode(Name=None)
     god_node.Rank = None
-    
+
     base = cons_split[0]
     cur_node = god_node
 
-    # create a base path in the tree 
+    # create a base path in the tree
     for rank, name in enumerate(base):
         new_node = TreeNode(Name=name)
         new_node.Rank = rank
@@ -456,7 +455,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
         if n.istip():
             n.ChildLookup = {}
             continue
-        n.ChildLookup = {n.Children[0].Name:n.Children[0]}
+        n.ChildLookup = {n.Children[0].name:n.Children[0]}
 
     # for every consensus string, start at the "god" node
     for idx,con in enumerate(cons_split):
@@ -467,42 +466,42 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
             if name in cur_node.ChildLookup:
                 cur_node = cur_node.ChildLookup[name]
             else:
-                #print "adding to %s to %s" % (name, cur_node.Name)
+                #print "adding to %s to %s" % (name, cur_node.name)
                 new_node = TreeNode(Name=name)
                 new_node.Rank = rank
                 new_node.ChildLookup = {}
                 cur_node.append(new_node)
                 cur_node.ChildLookup[name] = new_node
                 cur_node = new_node
-        
+
         if tips is not None:
             cur_node.append(TreeNode(Name=tips[idx]))
 
     # build an assist lookup dict
     lookup = {}
     for node in god_node.traverse():
-        if node.Name is None:
+        if node.name is None:
             continue
-        if check_for_rank and '__' in node.Name and \
-                node.Name.split('__')[1] == '':
+        if check_for_rank and '__' in node.name and \
+                node.name.split('__')[1] == '':
             continue
-        lookup[node.Name] = node
+        lookup[node.name] = node
 
     return god_node, lookup
 
 def get_nearest_named_ancestor(node):
-    """Returns node of nearest .Name'd ancestor
+    """Returns node of nearest .name'd ancestor
 
     returns None if there does not exist a named ancestor
     """
     curr = node.Parent
-    while curr is not None and curr.Name is None:
+    while curr is not None and curr.name is None:
         curr = curr.Parent
     return curr
 
 def backfill_names_gap(tree, consensus_lookup, verbose=False):
     """Fill in missing names
-    
+
     use the consensus tree mapped by nodes_lookup to attempt to fill in missing
     consensus names. For instance, if we know, by the the consensus tree,
     that foo has the parent bar, then if we see the name foo in the real tree
@@ -513,9 +512,9 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
     """
     n_ranks = len(RANK_ORDER) - 1
     for node in tree.nontips(include_self=True):
-        
-        if node.Name is not None:
-            node.BackFillNames = [node.Name]
+
+        if node.name is not None:
+            node.BackFillNames = [node.name]
         else:
             node.BackFillNames = []
             continue
@@ -535,14 +534,14 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
 
         if named_ancestor is None:
             if verbose:
-                print "Unable to find a named parent for %s" % (node.Name)
+                print "Unable to find a named parent for %s" % (node.name)
             continue
 
         levels = node.Rank - named_ancestor.Rank
 
         # this is indicative of a problem with the consensus strings
         if levels < 0:
-            print node.Name, node.Rank, named_ancestor.Rank
+            print node.name, node.Rank, named_ancestor.Rank
             print '\t',node.RankSafe
             print '\t',node.RankNames
             print '\t',named_ancestor.RankSafe
@@ -553,13 +552,13 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
             continue
 
         # walk consensus tree for missing names
-        names = walk_consensus_tree(consensus_lookup, node.Name, levels)
+        names = walk_consensus_tree(consensus_lookup, node.name, levels)
         node.BackFillNames = names
 
 
 def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
     """Walk up the consensus tree for n levels, return names
-    
+
     if reverse is True, names are [::-1]
     """
     node = lookup[name]
@@ -575,12 +574,12 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
             if verbose:
                 print "Possible malformed consensus tree! See node %s" % name
             continue
-        if curr.Name is None:
+        if curr.name is None:
             if verbose:
                 print "Gap in consensus tree! See node %s" % name
             names.append('%s__' % RANK_ORDER[curr.Rank])
         else:
-            names.append(curr.Name)
+            names.append(curr.name)
         curr = curr.Parent
 
     if reverse:
@@ -605,14 +604,14 @@ def commonname_promotion(tree):
                 break
             else:
                 backfill_nodes.append(curr)
-        
+
         # see if there is 100% overlap in a name at a given rank, if so
         # we can and should put it on the deeper node
         while push_name:
             cur_name = [n.BackFillNames[0] for n in backfill_nodes]
             if len(set(cur_name)) == 1:
                 node.BackFillNames.append(cur_name[0])
-                
+
                 for n in backfill_nodes:
                     n.BackFillNames.pop(0)
                     if len(n.BackFillNames) <= 1:
@@ -621,7 +620,7 @@ def commonname_promotion(tree):
                 push_name = False
 
     #set_names_dict = {}
-    # set the .Name attribute on the tree based on .BackFillNames
+    # set the .name attribute on the tree based on .BackFillNames
     for node in tree.preorder(include_self=True):
         if node.istip():
             continue
@@ -632,11 +631,11 @@ def commonname_promotion(tree):
                 unique.append(TaxaName.getTaxaName(name))
             node.BackFillNames = unique
         if len(node.BackFillNames) > 1:
-            node.Name = '; '.join(node.BackFillNames)
+            node.name = '; '.join(node.BackFillNames)
         elif len(node.BackFillNames) == 1:
-            node.Name = TaxaName.getTaxaName(node.BackFillNames[0])
+            node.name = TaxaName.getTaxaName(node.BackFillNames[0])
         else:
-            node.Name = None
+            node.name = None
 
 class TaxaName(object):
     """Support object to provide unique taxa names"""
@@ -663,16 +662,16 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
     """Appends on a unique number if multiple of the same names exist
 
     ordered by number of tips, ie, _1 has more tips that _2
-    
+
     expects .BackFillNames to be set
     """
     if verbose:
         print "Assigning unique tags to duplicate names..."
 
-    # build up a dict of the names and how many tips descend    
+    # build up a dict of the names and how many tips descend
     name_lookup = {}
     for node in tree.nontips(include_self=True):
-        if node.Name is None:
+        if node.name is None:
             continue
         else:
             for idx, name in enumerate(node.BackFillNames):
@@ -694,19 +693,19 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
                         node.BackFillNames[idx] = unique_name
                     #node.BackFillNames[idx] = '_'.join([node.BackFillNames[idx], '%d' % count])
 
-    # should probably be refactored, but assign .Name based on .BackFillNames
+    # should probably be refactored, but assign .name based on .BackFillNames
     for node in tree.nontips(include_self=True):
         if len(node.BackFillNames) == 0:
-            node.Name = None
+            node.name = None
         elif len(node.BackFillNames) == 1:
-            node.Name = node.BackFillNames[0]
+            node.name = node.BackFillNames[0]
         else:
-            node.Name = '; '.join(node.BackFillNames)
+            node.name = '; '.join(node.BackFillNames)
 
 def pull_consensus_strings(tree, verbose=False, append_prefix=True):
     """Pulls consensus strings off of tree
 
-    assumes .Name is set
+    assumes .name is set
     """
     if verbose:
         print "Pulling consensus strings..."
@@ -720,58 +719,58 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
         else:
             consensus_string = ['' for r in RANK_ORDER]
 
-        tipid = tip.Name
+        tipid = tip.name
         n = tip.Parent
 
         # walk up the tree filling in the consensus string
         while n.Parent:
-            if n.Name:
-                if '; ' in n.Name:
-                    names = n.Name.split('; ')
+            if n.name:
+                if '; ' in n.name:
+                    names = n.name.split('; ')
                     for name in names:
                         rank_idx = rank_order_rev[name[0]]
                         consensus_string[rank_idx] = name
                 else:
-                    rank_idx = rank_order_rev[n.Name[0]]
-                    consensus_string[rank_idx] = n.Name
+                    rank_idx = rank_order_rev[n.name[0]]
+                    consensus_string[rank_idx] = n.name
             n = n.Parent
 
         # if there is a name at the root we need to make sure we grab it
-        if n.Name:
-            if '; ' in n.Name:
-                names = n.Name.split('; ')
+        if n.name:
+            if '; ' in n.name:
+                names = n.name.split('; ')
                 for name in names:
                     rank_idx = rank_order_rev[name[0]]
                     consensus_string[rank_idx] = name
             else:
-                rank_idx = rank_order_rev[n.Name[0]]
-                consensus_string[rank_idx] = n.Name
+                rank_idx = rank_order_rev[n.name[0]]
+                consensus_string[rank_idx] = n.name
 
         # join strings with tip id
         constrings.append('\t'.join([tipid, '; '.join(consensus_string)]))
     return constrings
 
 def save_bootstraps(tree, verbose=False):
-    """Retains .Bootstrap if set in .Name"""
+    """Retains .Bootstrap if set in .name"""
     if verbose:
         print "Attempting to retain bootstrap values"
     for n in tree.nontips(include_self=True):
         if n.Bootstrap is not None:
-            if n.Name is None:
-                n.Name = str(n.Bootstrap)
+            if n.name is None:
+                n.name = str(n.Bootstrap)
             else:
-                if ';' in n.Name:
-                    n.Name = ':'.join([str(n.Bootstrap), "%s" % n.Name])
+                if ';' in n.name:
+                    n.name = ':'.join([str(n.Bootstrap), "%s" % n.name])
                 else:
-                    n.Name = ':'.join([str(n.Bootstrap), n.Name])
+                    n.name = ':'.join([str(n.Bootstrap), n.name])
 
 def getpath(foo):
     while foo.Parent:
-        print foo.Name
+        print foo.name
         if hasattr(foo, 'RankNames'):
             print foo.RankNames
         foo = foo.Parent
-    print foo.Name
+    print foo.name
     if hasattr(foo, 'RankNames'):
         print foo.RankNames
 
@@ -797,17 +796,17 @@ def validate_all_paths(tree):
         path = []
         n = n.Parent
         while n.Parent:
-            if n.Name is not None:
-                if ':' in n.Name:
-                    names = n.Name.split(':',1)
+            if n.name is not None:
+                if ':' in n.name:
+                    names = n.name.split(':',1)
                     if not is_float(names[1]):
                         path.append(names[1])
                 else:
-                    if not is_float(n.Name):
-                        path.append(n.Name)
+                    if not is_float(n.name):
+                        path.append(n.name)
             n = n.Parent
-        if n.Name is not None:
-            path.append(n.Name)
+        if n.name is not None:
+            path.append(n.name)
 
         clean_path = []
         for p in path:
@@ -857,10 +856,10 @@ from sys import argv
 def main(args=argv):
     parser = OptionParser(option_list=options)
     opts, args = parser.parse_args(args=args)
-    tipname_map = load_consensus_map(open(opts.consensus_map), 
+    tipname_map = load_consensus_map(open(opts.consensus_map),
                                      opts.append_rank,
-                                     opts.verbose) 
-    tree = load_tree(open(opts.tree), tipname_map, opts.verbose) 
+                                     opts.verbose)
+    tree = load_tree(open(opts.tree), tipname_map, opts.verbose)
     counts = collect_names_at_ranks_counts(tree, opts.verbose)
     decorate_ntips(tree)
     min_count = 2
@@ -868,7 +867,7 @@ def main(args=argv):
     set_ranksafe(tree, opts.verbose)
     pick_names(tree, opts.verbose)
     name_node_score_fold(tree, verbose=opts.verbose)
-    
+
     if opts.verbose:
         print "SCORE: ", score_tree(tree, opts.verbose)
     set_preliminary_name_and_rank(tree)
@@ -878,7 +877,7 @@ def main(args=argv):
     commonname_promotion(tree)
     make_names_unique(tree, append_suffix=False, verbose=opts.verbose)
 
-    
+
     constrings = pull_consensus_strings(tree, opts.verbose)
 
     f = open(opts.output + '-consensus-strings', 'w')
@@ -890,7 +889,7 @@ def main(args=argv):
     f.write(tree.getNewick(with_distances=True))
     f.close()
 
-                
+
 if __name__ == '__main__':
     main()
 
