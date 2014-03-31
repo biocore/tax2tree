@@ -231,10 +231,10 @@ class NLevelTests(TestCase):
         """complains correctly about badpaths"""
         input = "(((((1,2)s__,(3,4)s__)g__)p__),((5,6)f__)f__,((7,8)c__)o__);"
         t = load_tree(input, {})
-        exp = [t.getNodeMatchingName('5'),
-               t.getNodeMatchingName('6'),
-               t.getNodeMatchingName('7'),
-               t.getNodeMatchingName('8')]
+        exp = [t.find('5'),
+               t.find('6'),
+               t.find('7'),
+               t.find('8')]
         obs = validate_all_paths(t)
         self.assertEqual(obs, exp)
 
@@ -381,8 +381,8 @@ class NLevelTests(TestCase):
         t2 = TreeNode.from_newick("(((s1,s2)g1,s3));")
         exp_t = t
         exp_t2 = None
-        obs_t = get_nearest_named_ancestor(t.getNodeMatchingName('s3'))
-        obs_t2 = get_nearest_named_ancestor(t2.getNodeMatchingName('s3'))
+        obs_t = get_nearest_named_ancestor(t.find('s3'))
+        obs_t2 = get_nearest_named_ancestor(t2.find('s3'))
         self.assertEqual(obs_t, exp_t)
         self.assertEqual(obs_t2, exp_t2)
 
