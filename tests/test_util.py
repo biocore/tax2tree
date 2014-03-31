@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from cogent.util.unit_test import TestCase, main
+from unittest import TestCase, main
 from t2t.util import combine_alignments, reroot
 from skbio.core.tree import TreeNode
 
