@@ -203,7 +203,7 @@ def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
 
     n_ranks = len(RANK_ORDER)
 
-    for n in tree.nontips(include_self=True):
+    for n in tree.non_tips(include_self=True):
         counts = dict([(i, {}) for i in range(n_ranks)])
 
         # build of counts of the names at the tips per rank
@@ -269,7 +269,7 @@ def pick_names(tree, verbose=False):
     if verbose:
         print "picking names..."
 
-    for node in tree.nontips(include_self=True):
+    for node in tree.non_tips(include_self=True):
         names = []
         count = 0
 
@@ -337,7 +337,7 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips, \
     name_node_score = dict([(i, {}) for i in range(len(RANK_ORDER))])
     n_ranks = len(RANK_ORDER)
 
-    for node in tree.nontips(include_self=True):
+    for node in tree.non_tips(include_self=True):
         node.RankNameScores = [None] * n_ranks
 
         for rank, name in enumerate(node.RankNames):
@@ -402,7 +402,7 @@ def score_tree(tree, verbose=False):
     if verbose:
         print "Scoring tree..."
 
-    for n in tree.nontips(include_self=True):
+    for n in tree.non_tips(include_self=True):
         for idx,name in enumerate(n.RankNames):
             if name is None:
                 continue
@@ -419,7 +419,7 @@ def set_preliminary_name_and_rank(tree):
     n_ranks = len(RANK_ORDER)
     empty_ranknames = [None] * n_ranks
 
-    for node in tree.nontips(include_self=True):
+    for node in tree.non_tips(include_self=True):
         node.name = None
         node.Rank = None
 
@@ -511,7 +511,7 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
     names later if we sanely and easily can
     """
     n_ranks = len(RANK_ORDER) - 1
-    for node in tree.nontips(include_self=True):
+    for node in tree.non_tips(include_self=True):
 
         if node.name is not None:
             node.BackFillNames = [node.name]
@@ -670,7 +670,7 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
 
     # build up a dict of the names and how many tips descend
     name_lookup = {}
-    for node in tree.nontips(include_self=True):
+    for node in tree.non_tips(include_self=True):
         if node.name is None:
             continue
         else:
@@ -694,7 +694,7 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
                     #node.BackFillNames[idx] = '_'.join([node.BackFillNames[idx], '%d' % count])
 
     # should probably be refactored, but assign .name based on .BackFillNames
-    for node in tree.nontips(include_self=True):
+    for node in tree.non_tips(include_self=True):
         if len(node.BackFillNames) == 0:
             node.name = None
         elif len(node.BackFillNames) == 1:
@@ -754,7 +754,7 @@ def save_bootstraps(tree, verbose=False):
     """Retains .Bootstrap if set in .name"""
     if verbose:
         print "Attempting to retain bootstrap values"
-    for n in tree.nontips(include_self=True):
+    for n in tree.non_tips(include_self=True):
         if n.Bootstrap is not None:
             if n.name is None:
                 n.name = str(n.Bootstrap)
