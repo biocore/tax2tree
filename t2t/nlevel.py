@@ -436,7 +436,7 @@ def set_preliminary_name_and_rank(tree):
 
 def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     """Returns a mapping by rank for names to their parent names and counts"""
-    god_node = TreeNode(Name=None)
+    god_node = TreeNode(name=None)
     god_node.Rank = None
 
     base = cons_split[0]
@@ -444,7 +444,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
 
     # create a base path in the tree
     for rank, name in enumerate(base):
-        new_node = TreeNode(Name=name)
+        new_node = TreeNode(name=name)
         new_node.Rank = rank
         cur_node.append(new_node)
         cur_node = new_node
@@ -467,7 +467,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
                 cur_node = cur_node.ChildLookup[name]
             else:
                 #print "adding to %s to %s" % (name, cur_node.name)
-                new_node = TreeNode(Name=name)
+                new_node = TreeNode(name=name)
                 new_node.Rank = rank
                 new_node.ChildLookup = {}
                 cur_node.append(new_node)
@@ -475,7 +475,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
                 cur_node = new_node
 
         if tips is not None:
-            cur_node.append(TreeNode(Name=tips[idx]))
+            cur_node.append(TreeNode(name=tips[idx]))
 
     # build an assist lookup dict
     lookup = {}
