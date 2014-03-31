@@ -231,10 +231,7 @@ class NLevelTests(TestCase):
         """complains correctly about badpaths"""
         input = "(((((1,2)s__,(3,4)s__)g__)p__),((5,6)f__)f__,((7,8)c__)o__);"
         t = load_tree(input, {})
-        exp = [t.find('5'),
-               t.find('6'),
-               t.find('7'),
-               t.find('8')]
+        exp = [n for n in t.tips() if n.name in ['5', '6', '7', '8']]
         obs = validate_all_paths(t)
         self.assertEqual(obs, exp)
 
