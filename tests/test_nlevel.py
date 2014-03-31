@@ -23,8 +23,7 @@ from t2t.nlevel import load_consensus_map, collect_names_at_ranks_counts, \
         make_consensus_tree, backfill_names_gap, commonname_promotion, \
         decorate_ntips, name_node_score_fold, validate_all_paths, \
         score_tree
-from cogent.parse.tree import DndParser
-from cogent.core.tree import TreeNode
+from skbio.core.tree import TreeNode
 
 class NLevelTests(TestCase):
     def setUp(self):
@@ -35,7 +34,7 @@ class NLevelTests(TestCase):
         # set RankNames and RankNameScores
         # if name in RankNames, check score, look at tips, etc
         t_str = "(((a,b),(c,d))e,(f,g),h)i;"
-        t = DndParser(t_str)
+        t = TreeNode.from_newick(t_str)
         t.RankNames = ['i',None,None,None] # 1.0 * 6
         t.RankNameScores = [1.0,None,None,None]
         t.Children[0].RankNames = [None,'e','foo',None] # 0.5 * 3, 0.6 * 3
@@ -360,7 +359,7 @@ class NLevelTests(TestCase):
     def test_decorate_ntips(self):
         """correctly decorate the tree with the NumTips param"""
         input = "(((a,b)c,(d,e,f)g)h,(i,j)k)l;"
-        tree = DndParser(input)
+        tree = TreeNode.from_newick(input)
         tips = dict([(tip.name, tip) for tip in tree.tips()])
         tips['a'].Consensus = [1,2,3,4,5,6,7]
         tips['b'].Consensus = [None,None,None,5,None,None,None]
@@ -378,8 +377,8 @@ class NLevelTests(TestCase):
 
     def test_get_nearest_named_ancestor(self):
         """correctly get the nearest named ancestor"""
-        t = DndParser("(((s1,s2)g1,s3))root;")
-        t2 = DndParser("(((s1,s2)g1,s3));")
+        t = TreeNode.from_newick("(((s1,s2)g1,s3))root;")
+        t2 = TreeNode.from_newick("(((s1,s2)g1,s3));")
         exp_t = t
         exp_t2 = None
         obs_t = get_nearest_named_ancestor(t.getNodeMatchingName('s3'))
@@ -389,14 +388,14 @@ class NLevelTests(TestCase):
 
     def test_backfill_names_gap(self):
         """correctly backfill names"""
-        consensus_tree = DndParser("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.from_newick("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
         rank_lookup = {'s':6,'g':5,'f':4,'o':3,'c':2,'p':1,'k':0}
         for n in consensus_tree.traverse(include_self=True):
             n.Rank = rank_lookup[n.name[0]]
         input = "((((1)s1,(2)s2),((3)s3,(4)s5)))o1;"
         lookup = dict([(n.name, n) for n in consensus_tree.traverse(include_self=True)])
         #exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
-        t = DndParser(input)
+        t = TreeNode.from_newick(input)
         t.Rank = 3
         t.Children[0].Rank = None
         t.Children[0].Children[0].Rank = None
@@ -419,21 +418,21 @@ class NLevelTests(TestCase):
 
     def test_backfill_names_dangling(self):
         """correctly fill in dangling missing ranks"""
-        consensus_tree = DndParser("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.from_newick("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
         input = "((((1),(2)),((3),(4))))'o1; f1';"
         lookup = dict([(n.name, n) for n in consensus_tree.traverse(include_self=True)])
         #exp = "((((1),(2)),((3),(4))))'o1; f1';"
 
     def test_commonname_promotion(self):
         """correctly promote names if possible"""
-        consensus_tree = DndParser("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.from_newick("(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
         rank_lookup = {'s':6,'g':5,'f':4,'o':3,'c':2,'p':1,'k':0}
         for n in consensus_tree.traverse(include_self=True):
             n.Rank = rank_lookup[n.name[0]]
         input = "((((1)s1,(2)s2),((3)s3,(4)s5)))o1;"
         lookup = dict([(n.name, n) for n in consensus_tree.traverse(include_self=True)])
         exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1';"
-        t = DndParser(input)
+        t = TreeNode.from_newick(input)
         t.Rank = 3
         t.Children[0].Rank = None
         t.Children[0].Children[0].Rank = None
