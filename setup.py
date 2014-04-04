@@ -6,30 +6,23 @@ import re
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
 __credits__ = ["Daniel McDonald"]
-__license__ = "GPL"
+__license__ = "BSD"
 __version__ = "1.0"
 __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
- 
+
 long_description = """Taxonomy decoration tools for phylogenetic trees
 
 http://tax2tree.sourceforge.net
 
 """
 try:
-    import cogent
+    import skbio
 except ImportError:
-    print "PyCogent not installed but required. (Is it installed? Is it in the current users $PYTHONPATH or site-packages?) See http://pycogent.sourceforge.net."
+    print "scikit-bio not installed but required. (Is it installed? Is it in the current users $PYTHONPATH or site-packages?)"
     exit(1)
-    
-pycogent_version = tuple([int(v) \
-        for v in re.split("[^\d]", cogent.__version__) if v.isdigit()])
-        
-if pycogent_version < (1,4,1):
-    print "PyCogent >= 1.6.0 required, but %s is installed." % cogent.__version__
-    exit(1)
-    
+
 setup(name='tax2tree',
       version=__version__,
       description='Taxonomy to tree decoration tools',
