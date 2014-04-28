@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from optparse import OptionParser, make_option
 from string import lower
 from operator import itemgetter, add
 from numpy import argmin, array, where
@@ -17,14 +16,6 @@ __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
 
-options = [make_option('--consensus-map', dest='consensus_map',
-                       type='string'),
-           make_option('--append-rank', dest='append_rank',
-                       action='store_true', default=False),
-           make_option('--tree', dest='tree', type='string'),
-           make_option('--output', dest='output', type='string'),
-           make_option('--verbose', dest='verbose', action='store_true',
-                       default=False)]
 
 RANK_ORDER = ['k', 'p', 'c', 'o', 'f', 'g', 's']
 BAD_NAMES = [
@@ -861,61 +852,3 @@ def validate_all_paths(tree):
             bad_tips.append(tip)
 
     return bad_tips
-
-
-def nlevel_workflow(tree, contree_lookup, verbose=False):
-    counts = collect_names_at_ranks_counts(tree, verbose)
-    decorate_ntips(tree)
-    print "DECORATING WITH NTIPS, SHOULD USE RANGENODE METHODS"
-    min_count = 2
-    decorate_name_relative_freqs(tree, counts, min_count, verbose)
-    set_ranksafe(tree, verbose)
-    pick_names(tree, verbose)
-    name_node_score_fold(tree, verbose)
-    set_preliminary_name_and_rank(tree)
-    backfill_names_gap(tree, contree_lookup, verbose)
-    commonname_promotion(tree)
-    make_names_unique(tree, verbose)
-    return tree
-
-from sys import argv
-
-
-def main(args=argv):
-    parser = OptionParser(option_list=options)
-    opts, args = parser.parse_args(args=args)
-    tipname_map = load_consensus_map(open(opts.consensus_map),
-                                     opts.append_rank,
-                                     opts.verbose)
-    tree = load_tree(open(opts.tree), tipname_map, opts.verbose)
-    counts = collect_names_at_ranks_counts(tree, opts.verbose)
-    decorate_ntips(tree)
-    min_count = 2
-    decorate_name_relative_freqs(tree, counts, min_count, opts.verbose)
-    set_ranksafe(tree, opts.verbose)
-    pick_names(tree, opts.verbose)
-    name_node_score_fold(tree, verbose=opts.verbose)
-
-    if opts.verbose:
-        print "SCORE: ", score_tree(tree, opts.verbose)
-    set_preliminary_name_and_rank(tree)
-
-    contree, contree_lookup = make_consensus_tree(tipname_map.values())
-    backfill_names_gap(tree, contree_lookup, opts.verbose)
-    commonname_promotion(tree)
-    make_names_unique(tree, append_suffix=False, verbose=opts.verbose)
-
-    constrings = pull_consensus_strings(tree, opts.verbose)
-
-    f = open(opts.output + '-consensus-strings', 'w')
-    f.write('\n'.join(constrings))
-    f.close()
-
-    save_bootstraps(tree, opts.verbose)
-    f = open(opts.output, 'w')
-    f.write(tree.getNewick(with_distances=True))
-    f.close()
-
-
-if __name__ == '__main__':
-    main()
