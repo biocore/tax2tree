@@ -5,6 +5,7 @@ import click
 
 import t2t
 import t2t.nlevel as nl
+import t2t.util as ut
 
 
 def print_version(ctx, value):
@@ -12,6 +13,7 @@ def print_version(ctx, value):
         return
     print('Version %s' % t2t.__version__)
     ctx.exit()
+
 
 @click.group()
 @click.option('--version', is_flag=True, callback=print_version,
@@ -22,7 +24,7 @@ def cli(ctx):
 
 
 @cli.command()
-@click.option('--consensus-map', '-m', required=True, 
+@click.option('--consensus-map', '-m', required=True,
               help='Input consensus map', type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Output basename')
 @click.option('--tree', '-t', required=True, help='Input tree',
@@ -67,16 +69,16 @@ def decorate(tree, consensus_map, output):
               type=click.File('U'))
 @click.option('--tips', '-n', required=True, help='Tip names',
               type=click.File('U'))
-@click.option('--output', '-o', required=True, help='Result', 
+@click.option('--output', '-o', required=True, help='Result',
               type=click.File('w'))
 def reroot(tree, tips, output):
     """Reroot a tree"""
     tipnames = set([l.strip() for l in tips])
     tree_ = TreeNode.from_newick(tree)
-    rerooted = tree_.reroot(tipnames)
+    rerooted = ut.reroot(tree_, tipnames)
 
     output.write(rerooted.to_newick(with_distances=True))
-   
- 
+
+
 if __name__ == '__main__':
     cli()
