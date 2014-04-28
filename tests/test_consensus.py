@@ -3,7 +3,7 @@
 from t2t.consensus import get_consensus_stats, taxa_score, hash_cons, \
         taxa_score_hash, merge_taxa_strings_and_scores
 from unittest import TestCase, main
-from numpy import nan, array, array_equal
+from numpy import array, array_equal
 
 class ConsensusTests(TestCase):
     def setUp(self):
