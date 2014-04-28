@@ -28,6 +28,7 @@ def cli(ctx):
 @click.option('--tree', '-t', required=True, help='Input tree',
               type=click.File('U'))
 def decorate(tree, consensus_map, output):
+    """Decorate a taxonomy onto a tree"""
     append_rank = False
     seed_con = consensus_map.readline().strip().split('\t')[1]
 
