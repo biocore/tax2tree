@@ -13,32 +13,36 @@ __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
 
+
 class UtilTests(TestCase):
+
     def setUp(self):
         pass
 
     def test_combine_alignments(self):
         """Combine alignments, raise if intersecting ids"""
-        lines1 = ['>a','AATTGGCC','>b','AATTAATT']
-        lines2 = ['>c','AATTAGCC','>d','AATTGATT']
-        exp = {'a':'AATTGGCC','b':'AATTAATT',
-               'c':'AATTAGCC','d':'AATTGATT'}
+        lines1 = ['>a', 'AATTGGCC', '>b', 'AATTAATT']
+        lines2 = ['>c', 'AATTAGCC', '>d', 'AATTGATT']
+        exp = {'a': 'AATTGGCC', 'b': 'AATTAATT',
+               'c': 'AATTAGCC', 'd': 'AATTGATT'}
         obs = combine_alignments(lines1, lines2)
         self.assertEqual(obs, exp)
 
-        lines1 = ['>a','AATTGGCC','>b','AATTAATT']
-        lines2 = ['>a','AATTAACC','>C','AATTGATT']
+        lines1 = ['>a', 'AATTGGCC', '>b', 'AATTAATT']
+        lines2 = ['>a', 'AATTAACC', '>C', 'AATTGATT']
         self.assertRaises(ValueError, combine_alignments, lines1, lines2)
 
     def test_reroot(self):
         """Should correctly reroot a tree"""
         t = TreeNode.from_newick("(((a,b)c,(d,e)f)g,(h,i)j);")
-        tips = ['a','b']
+        tips = ['a', 'b']
         for n in t.traverse():
             n.Length = 1.0
 
-        # note, g is lost because it has a single descendent and gets pruned off
-        exp = "((a:1.0,b:1.0)c:0.5,((d:1.0,e:1.0)f:1.0,(h:1.0,i:1.0)j:2.0):0.5);"
+        # note, g is lost because it has a single descendent and gets pruned
+        # off
+        exp = ("((a:1.0,b:1.0)c:0.5,((d:1.0,e:1.0)f:1.0,(h:1.0,i:1.0)"
+               "j:2.0):0.5);")
         exp = "((a,b)c,((d,e)f,(h,i)j));"
         obs = reroot(t, tips)
         self.assertEqual(obs.to_newick(), exp)
@@ -58,4 +62,3 @@ class UtilTests(TestCase):
 
 if __name__ == '__main__':
     main()
-
