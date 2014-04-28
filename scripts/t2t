@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+from skbio.core.tree import TreeNode
+import click
+
+import t2t
+import t2t.nlevel as nl
+
+
+def print_version(ctx, value):
+    if not value:
+        return
+    print('Version %s' % t2t.__version__)
+    ctx.exit()
+
+@click.group()
+@click.option('--version', is_flag=True, callback=print_version,
+              expose_value=False, is_eager=True)
+@click.pass_context
+def cli(ctx):
+    pass
+
+
+@cli.command()
+@click.option('--consensus-map', '-m', required=True, 
+              help='Input consensus map', type=click.File('U'))
+@click.option('--output', '-o', required=True, help='Output basename')
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+def decorate(tree, consensus_map, output):
+    append_rank = False
+    seed_con = consensus_map.readline().strip().split('\t')[1]
+
+    nl.determine_rank_order(seed_con)
+
+    tipname_map = nl.load_consensus_map(consensus_map, append_rank)
+    tree_ = nl.load_tree(tree, tipname_map)
+    counts = nl.collect_names_at_ranks_counts(tree_)
+    nl.decorate_ntips(tree_)
+    nl.decorate_name_relative_freqs(tree_, counts, 2)
+    nl.set_ranksafe(tree_)
+    nl.pick_names(tree_)
+    nl.name_node_score_fold(tree_)
+
+    nl.set_preliminary_name_and_rank(tree_)
+
+    contree, contree_lookup = nl.make_consensus_tree(tipname_map.values())
+    nl.backfill_names_gap(tree_, contree_lookup)
+    nl.commonname_promotion(tree_)
+    nl.make_names_unique(tree_)
+
+    constrings = nl.pull_consensus_strings(tree_)
+
+    f = open(output + '-consensus-strings', 'w')
+    f.write('\n'.join(constrings))
+    f.close()
+
+    nl.save_bootstraps(tree_)
+    f = open(output, 'w')
+    f.write(tree_.to_newick(with_distances=True))
+    f.close()
+
+
+@cli.command()
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--tips', '-n', required=True, help='Tip names',
+              type=click.File('U'))
+@click.option('--output', '-o', required=True, help='Result', 
+              type=click.File('w'))
+def reroot(tree, tips, output):
+    """Reroot a tree"""
+    tipnames = set([l.strip() for l in tips])
+    tree_ = TreeNode.from_newick(tree)
+    rerooted = tree_.reroot(tipnames)
+
+    output.write(rerooted.to_newick(with_distances=True))
+   
+ 
+if __name__ == '__main__':
+    cli()
