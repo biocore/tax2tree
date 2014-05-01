@@ -11,18 +11,20 @@ __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
 
+
 def combine_alignments(fp1, fp2):
     """take two filepointers, combine the files"""
     seqs1 = dict(parse_fasta(fp1))
     seqs2 = dict(parse_fasta(fp2))
 
-    if set(seqs1.keys()).intersection(set(seqs2.keys())):
-        raise ValueError, "Conflicting sequence ids in fp1 and fp2"
+    if set(seqs1).intersection(set(seqs2)):
+        raise ValueError("Conflicting sequence ids in fp1 and fp2")
 
     combined = seqs1
     combined.update(seqs2)
 
     return combined
+
 
 def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     """Returns a tree rerooted based on tipnames"""
@@ -53,6 +55,7 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     new_tree.prune()
 
     return new_tree
+
 
 def unzip(items):
     """The inverse of zip

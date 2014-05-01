@@ -88,14 +88,14 @@ def get_polyphyletic(cons):
 
 def hierarchy_errors(tax_lines):
     """Get errors in the taxonomy hierarchy"""
-    conmap = load_consensus_map(lines, False)
+    conmap = load_consensus_map(tax_lines, False)
     names = get_polyphyletic(conmap)
-    errors = defaultdict(list)
+    errors = []
 
     for (name, rank), parents in names.iteritems():
         if len(parents) > 1:
             err = {'Taxon': name, 'Rank': rank, 'Parents': parents}
-            errors["Multiple parents"].append(err)
+            errors.append(err)
 
     return errors
 
