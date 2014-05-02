@@ -265,24 +265,27 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
         n.ValidRelFreq = res_valid
 
 
-def set_ranksafe(tree, verbose=False):
-    """Decorates RankSafe on tree
+def set_ranksafe(tree):
+    """Determines what ranks are safe for a given node
 
     RankSafe is a len(RANK_ORDER) boolean list. True means at that rank, there
     is only a single name with > 50% relative abundance
 
-    NOTE: tree is modified in place
+    Parameters
+    ----------
+    tree : TreeNode
+
     """
-    if verbose:
-        print "setting ranksafe nodes..."
+    ranksafe = [False] * len(RANK_ORDER)
     for node in tree.traverse(include_self=True):
-        node.RankSafe = [False] * 7
+        node.RankSafe = ranksafe[:]
+
         if node.is_tip():
             continue
 
         for rank, names in node.ConsensusRelFreq.items():
             # this is strict
-            if sum([x >= 0.5 for x in names.values()]) == 1:
+            if sum(x >= 0.5 for x in names.values()) == 1:
                 node.RankSafe[rank] = True
 
 
