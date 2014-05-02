@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
 from string import lower
 from operator import itemgetter, add
 from numpy import argmin, array, where
@@ -111,37 +112,57 @@ def load_consensus_map(lines, append_rank, check_bad=True,
     return mapping
 
 
-def load_tree(input, tipname_map, verbose=False):
+def load_tree(tree, tipname_map):
     """Returns a PhyloNode tree decorated with helper attrs
 
-    Helper attrs include Consensus, TipStart and TipStop. Nontips and tips that
-    do not have consensus information will have [None] * len(RANK_ORDER) set
-    as Consensus
-    """
-    if verbose:
-        print "loading tree..."
-    if isinstance(input, TreeNode):
-        tree = input
-    else:
-        tree = TreeNode.from_newick(input)
+    The following attributes and descriptions are decorated onto the tree:
 
-    tips = list(tree.tips())
+        Consensus
+            If the node is a tip, the corresponding taxonomy string is placed
+            here otherwise [None] * number_of_ranks is stored
+
+            If the node is internal, then [None] * number_of_ranks is stored
+
+        TipStart
+            The left most tip
+
+        TipStop
+            The right most tip
+
+    Parameters
+    ----------
+    tree : str or TreeNode
+        A newick string or a TreeNode
+    tipname_map : dict
+        {id_: [tax, string]}
+
+    Returns
+    -------
+    TreeNode
+
+    """
+    if not isinstance(tree, TreeNode):
+        tree = TreeNode.from_newick(tree)
+
     n_ranks = len(RANK_ORDER)
 
-    for idx, tip in enumerate(tips):
+    missing_tax = [None] * n_ranks
+
+    for idx, tip in enumerate(tree.tips()):
+        if tip.name:
+            tip.name = tip.name.replace("'", "")
+
         tip.TipStart = idx
         tip.TipStop = idx
-        tip.Consensus = tipname_map.get(tip.name, [None] * 7)
-
-        if verbose and tip.Consensus is None:
-            print "No consensus for %s" % tip.name
+        tip.Consensus = tipname_map.get(tip.name, missing_tax)
 
     for node in tree.postorder(include_self=True):
         if node.is_tip():
             continue
+
         node.TipStart = node.children[0].TipStart
         node.TipStop = node.children[-1].TipStop
-        node.Consensus = [None] * n_ranks
+        node.Consensus = missing_tax
 
         if node.name is None:
             node.Bootstrap = None
@@ -149,84 +170,92 @@ def load_tree(input, tipname_map, verbose=False):
             try:
                 node.Bootstrap = float(node.name)
                 node.name = None
-            except:
-                if verbose:
-                    print "Could not save bootstrap %s, node is root: %s" % \
-                        (node.name, str(node.parent is None))
+            except ValueError:
                 node.Bootstrap = None
 
-    for tip in tree.tips():
-        if tip.name:
-            tip.name = tip.name.replace("'", "")
     return tree
 
 
-def collect_names_at_ranks_counts(tree, verbose=False):
+def collect_names_at_ranks_counts(tree):
     """Returns total name counts for a given name at a given rank
 
     Assumes the Consensus attribute is present on the tips
 
-    Returns a 2d dict, [RANK][name] -> count
-    """
-    if verbose:
-        print "collecting total counts..."
-    list_of_con = [tip.Consensus for tip in tree.tips()]
-    total_counts = dict([(i, {}) for i in range(len(RANK_ORDER))])
+    Parameters
+    ----------
+    tree : TreeNode
 
-    for consensus in list_of_con:
+    Returns
+    -------
+    dict of dict
+        Returns a 2d dict, [RANK][name] -> count
+
+    """
+    total_counts = {i: defaultdict(int) for i in range(len(RANK_ORDER))}
+
+    for consensus in (tip.Consensus for tip in tree.tips()):
         for rank, name in enumerate(consensus):
-            if not name:
+            if name is None:
                 continue
-            if name not in total_counts[rank]:
-                total_counts[rank][name] = 0
             total_counts[rank][name] += 1
     return total_counts
 
 
-def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
-    """Decorates ConsensusRelFreq and ValidRelFreq on tree
+def decorate_name_relative_freqs(tree, total_counts, min_count):
+    """Decorates relative frequency information for names on the tree
 
     Adds on the attribute ConsensusRelFreq which is a 2d dict containing
-    the relative frequency of each name at each rank
+    the relative frequency of each name at each rank for the subtree that
+    descends from a given node.
 
     Adds on the attribute ValidRelFreq which is a 2d dict containing
-    the valid tip frequency of each name at each rank
+    the valid tip frequency of each name at each rank for the subtree that
+    descends from a given node.
 
-    min_count is the minimum number of tips that must represent a name for that
-    frequency to be retained
+    Both these attributes will be None on tips.
 
-    Tips will have attr as None
+    Parameters
+    ----------
+    tree : TreeNode
+    total_counts : dict of dict
+        The return data from collect_names_at_ranks_counts
+    min_count : int
+        is the minimum number of tips that must represent a name for that
+        frequency to be retained
+
     """
-    if verbose:
-        print "HYBRID! decorating relative frequencies..."
     tips = list(tree.tips())
     for tip in tips:
         tip.ConsensusRelFreq = None
 
     n_ranks = len(RANK_ORDER)
+    n_ranks_it = range(n_ranks)
 
-    for n in tree.non_tips(include_self=True):
-        counts = {i: {} for i in range(n_ranks)}
+    for n in tree.traverse(include_self=True):
+        if n.is_tip():
+            n.ConsensusRelFreq = None
+            n.ValidRelFreq = None
+            continue
+
+        counts = {i: defaultdict(int) for i in n_ranks_it}
 
         # build of counts of the names at the tips per rank
-        cons_at_tips = [
-            tip.Consensus for tip in tips[n.TipStart:n.TipStop + 1]]
+        cons_at_tips = (t.Consensus for t in tips[n.TipStart:n.TipStop + 1])
         for con in cons_at_tips:
             for cur_rank, cur_name in enumerate(con):
                 if cur_name is None:
                     continue
-                if cur_name not in counts[cur_rank]:
-                    counts[cur_rank][cur_name] = 0
                 counts[cur_rank][cur_name] += 1
 
-        res_freq = {i: {} for i in range(n_ranks)}
-        res_valid = {i: {} for i in range(n_ranks)}
+        res_freq = {i: {} for i in n_ranks_it}
+        res_valid = {i: {} for i in n_ranks_it}
 
         # collect frequency information of the names per rank
-        for rank, names in counts.items():
-            for name, name_counts in counts[rank].items():
+        for rank, names in counts.iteritems():
+            for name, name_counts in counts[rank].iteritems():
                 if name_counts < min_count:
                     continue
+
                 relfreq = float(name_counts) / total_counts[rank][name]
                 validfreq = float(name_counts) / n.NumTips
                 res_freq[rank][name] = relfreq
@@ -236,48 +265,65 @@ def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
         n.ValidRelFreq = res_valid
 
 
-def set_ranksafe(tree, verbose=False):
-    """Decorates RankSafe on tree
+def set_ranksafe(tree):
+    """Determines what ranks are safe for a given node
 
     RankSafe is a len(RANK_ORDER) boolean list. True means at that rank, there
     is only a single name with > 50% relative abundance
 
-    NOTE: tree is modified in place
+    Parameters
+    ----------
+    tree : TreeNode
+
     """
-    if verbose:
-        print "setting ranksafe nodes..."
+    ranksafe = [False] * len(RANK_ORDER)
     for node in tree.traverse(include_self=True):
-        node.RankSafe = [False] * 7
+        node.RankSafe = ranksafe[:]
+
         if node.is_tip():
             continue
 
         for rank, names in node.ConsensusRelFreq.items():
             # this is strict
-            if sum([x >= 0.5 for x in names.values()]) == 1:
+            if sum(x >= 0.5 for x in names.values()) == 1:
                 node.RankSafe[rank] = True
 
 
 def decorate_ntips(tree):
-    """intelligently set the NumTips attribute on the tree"""
+    """Cache the number of informative tips on the tree.
+
+    This method will set NumTips as the number of informative tips that descend
+    from a given node. If the node is a tip, and it is informative, it will
+    have a count of 1. Informative is based on the presence of taxonomy
+    information at a tip.
+
+    Parameters
+    ----------
+    tree : TreeNode
+
+    """
     n_ranks = len(RANK_ORDER)
+    missing = [None] * n_ranks
+
     for node in tree.postorder(include_self=True):
         if node.is_tip():
-            # set to True if we have consensus information
-            node.NumTips = node.Consensus != ([None] * n_ranks)
+            node.NumTips = node.Consensus != missing
         else:
-            node.NumTips = reduce(add, [c.NumTips for c in node.children])
+            node.NumTips = sum(c.NumTips for c in node.children)
 
 
-def pick_names(tree, verbose=False):
-    """Picks RankSafe names, sets RankNames on tree
+def pick_names(tree):
+    """Does an initial decoration of names on the tree
 
-    NOTE: tree is modified in place
+    The best name by relative frequency is placed, from kingdom -> species,
+    up until the first uninformative name following an informative name is
+    placed
+
     """
-    if verbose:
-        print "picking names..."
+    names_prealloc = [None] * len(RANK_ORDER)
 
     for node in tree.non_tips(include_self=True):
-        names = []
+        names = names_prealloc[:]
         count = 0
 
         # set names at ranksafe nodes, stop if we've set a name and descendent
@@ -286,17 +332,13 @@ def pick_names(tree, verbose=False):
             if is_safe:
                 # place best name
                 count += 1
-                relfreq = node.ConsensusRelFreq[rank]
-                names.append(sorted(relfreq.items(), key=itemgetter(1))[-1][0])
+                relfreq = node.ConsensusRelFreq[rank].items()
+                names[rank] = sorted(relfreq, key=itemgetter(1))[-1][0]
             else:
                 # if we've had one or more useless rank, set remaining to None
                 if count >= 1:
-                    left = len(node.RankSafe) - len(names)
-                    for i in range(left):
-                        names.append(None)
                     break
-                else:
-                    names.append(None)
+
         node.RankNames = names
 
 
