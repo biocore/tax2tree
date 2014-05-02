@@ -129,7 +129,7 @@ class NLevelTests(TestCase):
                'k': (5, 6, [None] * 7),
                'l': (0, 6, [None] * 7)}
 
-        obstree = load_tree(input, tipname_map, verbose=False)
+        obstree = load_tree(input, tipname_map)
         obs = {}
         for node in obstree.traverse(include_self=True):
             obs[node.name] = (node.TipStart, node.TipStop, node.Consensus)
