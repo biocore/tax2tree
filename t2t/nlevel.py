@@ -111,12 +111,30 @@ def load_consensus_map(lines, append_rank, check_bad=True,
     return mapping
 
 
-def load_tree(input, tipname_map, verbose=False):
+def load_tree(tree, tipname_map, verbose=False):
     """Returns a PhyloNode tree decorated with helper attrs
 
-    Helper attrs include Consensus, TipStart and TipStop. Nontips and tips that
-    do not have consensus information will have [None] * len(RANK_ORDER) set
-    as Consensus
+    The following attributes and descriptions are decorated onto the tree:
+
+        Consensus
+            If the node is a tip, the corresponding taxonomy string is placed
+            here otherwise [None] * 7 is stored
+
+            If the node is internal, then [None] * 7 is stored
+
+        TipStart
+            The left most tip
+
+        TipStop
+            The right most tip
+
+    Parameters
+    ----------
+    tree : str
+        A newick string
+    tipname_map : dict
+        {id_: [tax, string]}
+
     """
     if verbose:
         print "loading tree..."
