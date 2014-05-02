@@ -229,29 +229,33 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
         tip.ConsensusRelFreq = None
 
     n_ranks = len(RANK_ORDER)
+    n_ranks_it = range(n_ranks)
 
-    for n in tree.non_tips(include_self=True):
-        counts = {i: {} for i in range(n_ranks)}
+    for n in tree.traverse(include_self=True):
+        if n.is_tip():
+            n.ConsensusRelFreq = None
+            n.ValidRelFreq = None
+            continue
+
+        counts = {i: defaultdict(int) for i in n_ranks_it}
 
         # build of counts of the names at the tips per rank
-        cons_at_tips = [
-            tip.Consensus for tip in tips[n.TipStart:n.TipStop + 1]]
+        cons_at_tips = (t.Consensus for t in tips[n.TipStart:n.TipStop + 1])
         for con in cons_at_tips:
             for cur_rank, cur_name in enumerate(con):
                 if cur_name is None:
                     continue
-                if cur_name not in counts[cur_rank]:
-                    counts[cur_rank][cur_name] = 0
                 counts[cur_rank][cur_name] += 1
 
-        res_freq = {i: {} for i in range(n_ranks)}
-        res_valid = {i: {} for i in range(n_ranks)}
+        res_freq = {i: {} for i in n_ranks_it}
+        res_valid = {i: {} for i in n_ranks_it}
 
         # collect frequency information of the names per rank
-        for rank, names in counts.items():
-            for name, name_counts in counts[rank].items():
+        for rank, names in counts.iteritems():
+            for name, name_counts in counts[rank].iteritems():
                 if name_counts < min_count:
                     continue
+
                 relfreq = float(name_counts) / total_counts[rank][name]
                 validfreq = float(name_counts) / n.NumTips
                 res_freq[rank][name] = relfreq
