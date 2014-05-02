@@ -135,6 +135,10 @@ def load_tree(tree, tipname_map):
     tipname_map : dict
         {id_: [tax, string]}
 
+    Returns
+    -------
+    TreeNode
+
     """
     if not isinstance(tree, TreeNode):
         tree = TreeNode.from_newick(tree)
@@ -171,15 +175,21 @@ def load_tree(tree, tipname_map):
     return tree
 
 
-def collect_names_at_ranks_counts(tree, verbose=False):
+def collect_names_at_ranks_counts(tree):
     """Returns total name counts for a given name at a given rank
 
     Assumes the Consensus attribute is present on the tips
 
-    Returns a 2d dict, [RANK][name] -> count
+    Parameters
+    ----------
+    tree : TreeNode
+
+    Returns
+    -------
+    dict of dict
+        Returns a 2d dict, [RANK][name] -> count
+
     """
-    if verbose:
-        print "collecting total counts..."
     list_of_con = [tip.Consensus for tip in tree.tips()]
     total_counts = dict([(i, {}) for i in range(len(RANK_ORDER))])
 
