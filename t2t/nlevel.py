@@ -111,16 +111,16 @@ def load_consensus_map(lines, append_rank, check_bad=True,
     return mapping
 
 
-def load_tree(tree, tipname_map, verbose=False):
+def load_tree(tree, tipname_map):
     """Returns a PhyloNode tree decorated with helper attrs
 
     The following attributes and descriptions are decorated onto the tree:
 
         Consensus
             If the node is a tip, the corresponding taxonomy string is placed
-            here otherwise [None] * 7 is stored
+            here otherwise [None] * number_of_ranks is stored
 
-            If the node is internal, then [None] * 7 is stored
+            If the node is internal, then [None] * number_of_ranks is stored
 
         TipStart
             The left most tip
@@ -130,36 +130,34 @@ def load_tree(tree, tipname_map, verbose=False):
 
     Parameters
     ----------
-    tree : str
-        A newick string
+    tree : str or TreeNode
+        A newick string or a TreeNode
     tipname_map : dict
         {id_: [tax, string]}
 
     """
-    if verbose:
-        print "loading tree..."
-    if isinstance(input, TreeNode):
-        tree = input
-    else:
-        tree = TreeNode.from_newick(input)
+    if not isinstance(tree, TreeNode):
+        tree = TreeNode.from_newick(tree)
 
-    tips = list(tree.tips())
     n_ranks = len(RANK_ORDER)
 
-    for idx, tip in enumerate(tips):
+    missing_tax = [None] * n_ranks
+
+    for idx, tip in enumerate(tree.tips()):
+        if tip.name:
+            tip.name = tip.name.replace("'", "")
+
         tip.TipStart = idx
         tip.TipStop = idx
-        tip.Consensus = tipname_map.get(tip.name, [None] * 7)
-
-        if verbose and tip.Consensus is None:
-            print "No consensus for %s" % tip.name
+        tip.Consensus = tipname_map.get(tip.name, missing_tax)
 
     for node in tree.postorder(include_self=True):
         if node.is_tip():
             continue
+
         node.TipStart = node.children[0].TipStart
         node.TipStop = node.children[-1].TipStop
-        node.Consensus = [None] * n_ranks
+        node.Consensus = missing_tax
 
         if node.name is None:
             node.Bootstrap = None
@@ -167,15 +165,9 @@ def load_tree(tree, tipname_map, verbose=False):
             try:
                 node.Bootstrap = float(node.name)
                 node.name = None
-            except:
-                if verbose:
-                    print "Could not save bootstrap %s, node is root: %s" % \
-                        (node.name, str(node.parent is None))
+            except ValueError:
                 node.Bootstrap = None
 
-    for tip in tree.tips():
-        if tip.name:
-            tip.name = tip.name.replace("'", "")
     return tree
 
 
