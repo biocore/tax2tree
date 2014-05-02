@@ -201,22 +201,29 @@ def collect_names_at_ranks_counts(tree):
     return total_counts
 
 
-def decorate_name_relative_freqs(tree, total_counts, min_count, verbose=False):
-    """Decorates ConsensusRelFreq and ValidRelFreq on tree
+def decorate_name_relative_freqs(tree, total_counts, min_count):
+    """Decorates relative frequency information for names on the tree
 
     Adds on the attribute ConsensusRelFreq which is a 2d dict containing
-    the relative frequency of each name at each rank
+    the relative frequency of each name at each rank for the subtree that
+    descends from a given node.
 
     Adds on the attribute ValidRelFreq which is a 2d dict containing
-    the valid tip frequency of each name at each rank
+    the valid tip frequency of each name at each rank for the subtree that
+    descends from a given node.
 
-    min_count is the minimum number of tips that must represent a name for that
-    frequency to be retained
+    Both these attributes will be None on tips.
 
-    Tips will have attr as None
+    Parameters
+    ----------
+    tree : TreeNode
+    total_counts : dict of dict
+        The return data from collect_names_at_ranks_counts
+    min_count : int
+        is the minimum number of tips that must represent a name for that
+        frequency to be retained
+
     """
-    if verbose:
-        print "HYBRID! decorating relative frequencies..."
     tips = list(tree.tips())
     for tip in tips:
         tip.ConsensusRelFreq = None
