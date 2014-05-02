@@ -276,14 +276,26 @@ def set_ranksafe(tree, verbose=False):
 
 
 def decorate_ntips(tree):
-    """intelligently set the NumTips attribute on the tree"""
+    """Cache the number of informative tips on the tree.
+
+    This method will set NumTips as the number of informative tips that descend
+    from a given node. If the node is a tip, and it is informative, it will
+    have a count of 1. Informative is based on the presence of taxonomy
+    information at a tip.
+
+    Parameters
+    ----------
+    tree : TreeNode
+
+    """
     n_ranks = len(RANK_ORDER)
+    missing = [None] * n_ranks
+
     for node in tree.postorder(include_self=True):
         if node.is_tip():
-            # set to True if we have consensus information
-            node.NumTips = node.Consensus != ([None] * n_ranks)
+            node.NumTips = node.Consensus != missing
         else:
-            node.NumTips = reduce(add, [c.NumTips for c in node.children])
+            node.NumTips = sum(c.NumTips for c in node.children)
 
 
 def pick_names(tree, verbose=False):
