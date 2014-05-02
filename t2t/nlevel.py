@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
 from string import lower
 from operator import itemgetter, add
 from numpy import argmin, array, where
@@ -190,15 +191,12 @@ def collect_names_at_ranks_counts(tree):
         Returns a 2d dict, [RANK][name] -> count
 
     """
-    list_of_con = [tip.Consensus for tip in tree.tips()]
-    total_counts = dict([(i, {}) for i in range(len(RANK_ORDER))])
+    total_counts = {i: defaultdict(int) for i in range(len(RANK_ORDER))}
 
-    for consensus in list_of_con:
+    for consensus in (tip.Consensus for tip in tree.tips()):
         for rank, name in enumerate(consensus):
-            if not name:
+            if name is None:
                 continue
-            if name not in total_counts[rank]:
-                total_counts[rank][name] = 0
             total_counts[rank][name] += 1
     return total_counts
 
