@@ -312,16 +312,18 @@ def decorate_ntips(tree):
             node.NumTips = sum(c.NumTips for c in node.children)
 
 
-def pick_names(tree, verbose=False):
-    """Picks RankSafe names, sets RankNames on tree
+def pick_names(tree):
+    """Does an initial decoration of names on the tree
 
-    NOTE: tree is modified in place
+    The best name by relative frequency is placed, from kingdom -> species,
+    up until the first uninformative name following an informative name is
+    placed
+
     """
-    if verbose:
-        print "picking names..."
+    names_prealloc = [None] * len(RANK_ORDER)
 
     for node in tree.non_tips(include_self=True):
-        names = []
+        names = names_prealloc[:]
         count = 0
 
         # set names at ranksafe nodes, stop if we've set a name and descendent
@@ -330,17 +332,13 @@ def pick_names(tree, verbose=False):
             if is_safe:
                 # place best name
                 count += 1
-                relfreq = node.ConsensusRelFreq[rank]
-                names.append(sorted(relfreq.items(), key=itemgetter(1))[-1][0])
+                relfreq = node.ConsensusRelFreq[rank].items()
+                names[rank] = sorted(relfreq, key=itemgetter(1))[-1][0]
             else:
                 # if we've had one or more useless rank, set remaining to None
                 if count >= 1:
-                    left = len(node.RankSafe) - len(names)
-                    for i in range(left):
-                        names.append(None)
                     break
-                else:
-                    names.append(None)
+
         node.RankNames = names
 
 
