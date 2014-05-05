@@ -6,7 +6,8 @@ import click
 import t2t
 import t2t.nlevel as nl
 import t2t.util as ut
-
+import t2t.remap as rmap
+import t2t.validate as val
 
 def print_version(ctx, value):
     if not value:
@@ -78,6 +79,70 @@ def reroot(tree, tips, output):
     rerooted = ut.reroot(tree_, tipnames)
 
     output.write(rerooted.to_newick(with_distances=True))
+
+
+@cli.command()
+@click.option('--otus', '-i', required=True,
+              help='Input OTU map', type=click.File('U'))
+@click.option('--consensus-map', '-m', required=True,
+              help='Input consensus map', type=click.File('U'))
+@click.option('--output', '-o', required=True, help='Result',
+              type=click.File('w'))
+def remap(otus, consensus_map, output):
+    """Remap the taxonomy to diff reps"""
+    tmp = [l.strip().split('\t') for l in consensus_map]
+    mapping = {k: v.split('; ') for k, v in tmp}
+    otu_map = rmap.parse_otu_map(otus)
+    result = rmap.remap_taxonomy(otu_map, mapping)
+
+    for k, v in result.iteritems():
+        output.write("%s\t%s\n" % (k, '; '.join(v)))
+
+
+@cli.command()
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--output', '-o', required=True, help='Result',
+              type=click.File('w'))
+def fetch(tree, output):
+    """Fetch the taxonomy off the tree"""
+    t = TreeNode.from_newick(tree)
+    res = nl.pull_consensus_strings(t)
+    output.write('\n'.join(res))
+
+
+@cli.command()
+@click.option('--taxonomy', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--limit', '-l', required=False, help='Limit output',
+              default=10, type=int)
+@click.option('--flat-errors/--no-flat-errors', default=True)
+@click.option('--hierarchy-errors/--no-hierarchy-errors', default=True)
+def validate(taxonomy, limit, flat_errors, hierarchy_errors):
+    """Validate a taxonomy"""
+    lines = taxonomy.readlines()
+
+    if flat_errors:
+        flat = val.flat_errors(lines)
+        for err_type in sorted(flat):
+            ids = ','.join(flat[err_type][:10])
+
+            if len(flat[err_type]) > limit:
+                ellipse = '...'
+            else:
+                ellipse = ''
+
+            print err_type
+            print '\t%s%s' % (ids, ellipse)
+
+    if hierarchy_errors:
+        hier = val.hierarchy_errors(lines)
+        if hier:
+            print "Multiple parents"
+        for err in hier:
+            print "\t%s" % err['Taxon']
+            for parent in err['Parents']:
+                print "\t\t%s, %s" % (parent, err['Parents'][parent])
 
 
 if __name__ == '__main__':
