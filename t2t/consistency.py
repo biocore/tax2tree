@@ -11,17 +11,29 @@ __status__ = "Development"
 
 from collections import defaultdict
 
+from numpy import mean
+
 class Consistency(object):
+    """Calculates the consistency of taxonomic groups within a reference tree.
+    
+    Consistency is a measure between 0 and 1 indicating how close a taxonomic
+    group is to being monophyletic. 
+    """
     def __init__(self, taxa_counts, n_ranks):
         self.taxa_counts = taxa_counts
         self.n_ranks = n_ranks
-                         
+
     def calculate(self, tree, rooted):
         """Return taxonomic consistency of each taxa in tree.
+        
+        Consistency is at every node and the highest consistency 
+        reported for each taxa.
         
         Parameters
         ----------
         tree : TreeNode
+        rooted : Boolean 
+            Indicates if tree should be treated as rooted
         """
         
         # determine total number of informative tips in tree for each rank
@@ -52,8 +64,8 @@ class Consistency(object):
                             
         return consistency_index
 
-    def write(self, output_file, consistency_index):
-        """Write consistency to file.
+    def write_taxon_consistency(self, output_file, consistency_index):
+        """Write consistency of each taxon to file.
                 
         Parameters
         ----------
@@ -67,5 +79,31 @@ class Consistency(object):
         for rank in xrange(self.n_ranks):
             for name, consistency in consistency_index[rank].iteritems():
                 fout.write('%s\t%d\t%.3f\n' % (name, self.taxa_counts[rank][name], consistency))
+                
+        fout.close()
+        
+    def write_rank_consistency(self, output_file, consistency_index, min_taxa, rank_order):
+        """Write average consistency of each rank to file.
+                
+        Parameters
+        ----------
+        output_file : TreeNode
+        consistency_index : dict of dict
+          Taxonomic consistency returned by Consistency.calculate() 
+        min_taxa: minimum taxa in group for inclusion in calculated average
+        """
+        
+        fout = open(output_file, 'w')
+        fout.write('Rank #\tRank prefix\t# taxon\tAverage consistency\n')
+        for rank in xrange(self.n_ranks):
+            val = []
+            for name, consistency in consistency_index[rank].iteritems():
+                if self.taxa_counts[rank][name] >= min_taxa:
+                    val.append(consistency)
+                    
+            if len(val) > 0:
+                fout.write('%s\t%s\t%d\t%.3f\n' % (rank, rank_order[rank], len(val), mean(val)))
+            else:
+                fout.write('%s\t%s\t%d\t%s\n' % (rank, rank_order[rank], len(val), 'NA'))
                 
         fout.close()
