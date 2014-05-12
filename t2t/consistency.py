@@ -20,6 +20,15 @@ class Consistency(object):
     group is to being monophyletic. 
     """
     def __init__(self, taxa_counts, n_ranks):
+        """Initialize class.
+        
+        Parameters
+        ----------
+        taxa_counts : dict of dict
+            Maps taxonomic rank and taxon names to counts, [RANK][name] -> count
+        n_ranks : Init 
+            Indicates number of ranks in taxonomic hierarchy
+        """
         self.taxa_counts = taxa_counts
         self.n_ranks = n_ranks
 
