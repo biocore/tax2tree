@@ -263,7 +263,37 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
 
         n.ConsensusRelFreq = res_freq
         n.ValidRelFreq = res_valid
+        
+def decorate_name_counts(tree):
+    """Decorates count information for names on the tree
 
+    Adds on the attribute TaxaCount which is a 2d dict containing
+    the count of each name at each rank for the subtree that
+    descends from a given node.
+
+    Parameters
+    ----------
+    tree : TreeNode
+    total_counts : dict of dict
+        The return data from collect_names_at_ranks_counts
+    """
+    
+    tips = list(tree.tips())
+    n_ranks = len(RANK_ORDER)
+    n_ranks_it = range(n_ranks)
+
+    for n in tree.traverse(include_self=True):
+        counts = {i: defaultdict(int) for i in n_ranks_it}
+
+        # build of counts of the names at the tips per rank
+        cons_at_tips = (t.Consensus for t in tips[n.TipStart:n.TipStop + 1])
+        for con in cons_at_tips:
+            for cur_rank, cur_name in enumerate(con):
+                if cur_name is None:
+                    continue
+                counts[cur_rank][cur_name] += 1
+
+        n.TaxaCount = counts
 
 def set_ranksafe(tree):
     """Determines what ranks are safe for a given node
@@ -310,6 +340,31 @@ def decorate_ntips(tree):
             node.NumTips = node.Consensus != missing
         else:
             node.NumTips = sum(c.NumTips for c in node.children)
+     
+            
+def decorate_ntips_rank(tree):
+    """Cache the number of informative tips at each rank for each node in the tree.
+
+    This method will set NumTipsRank as the number of informative tips that descend
+    from a given node for each rank. Informative is based on the presence of taxonomy
+    information at a tip for a give rank.
+
+    Parameters
+    ----------
+    tree : TreeNode
+
+    """
+    n_ranks = len(RANK_ORDER)
+
+    for node in tree.postorder(include_self=True):
+        counts = defaultdict(int)
+        for r in xrange(n_ranks):
+            if node.is_tip():
+                counts[r] = node.Consensus[r] != None
+            else:
+                counts[r] = sum(c.NumTipsRank[r] for c in node.children)
+                
+        node.NumTipsRank = counts
 
 
 def pick_names(tree):

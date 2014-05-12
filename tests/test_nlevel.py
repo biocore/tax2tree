@@ -18,14 +18,16 @@ __status__ = "Development"
 
 from unittest import TestCase, main
 from t2t.nlevel import (load_consensus_map, collect_names_at_ranks_counts,
-                        load_tree, decorate_name_relative_freqs, set_ranksafe,
+                        load_tree, decorate_name_relative_freqs, decorate_name_counts,
+                        set_ranksafe,
                         pick_names, has_badname, get_nearest_named_ancestor,
                         walk_consensus_tree, make_consensus_tree,
                         backfill_names_gap, commonname_promotion,
-                        decorate_ntips, name_node_score_fold,
+                        decorate_ntips, decorate_ntips_rank, 
+                        name_node_score_fold,
                         validate_all_paths, score_tree)
-from skbio.core.tree import TreeNode
 
+from skbio.core.tree import TreeNode
 
 class NLevelTests(TestCase):
 
@@ -167,6 +169,30 @@ class NLevelTests(TestCase):
                     6: {'7': 1.0, '8': 1.0}}
 
         self.assertEqual(tree.ConsensusRelFreq, exp_root)
+        
+    def test_decorate_name_counts(self):
+        """correctly decorate relative frequency information on a tree"""
+        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
+                       'b': ['1', '2', '3', '4', '5', '6', '8'],
+                       'd': ['1', '2', '3', '4', '5', '6', '8'],
+                       'e': ['1', '2', '3', '4', 'a', '6', '7'],
+                       'i': ['1', '2', '3', '4', 'a', None, '7'],
+                       'j': ['1', '2', '3', '4', 'a', None, '8']}
+
+        tree = load_tree(input, tipname_map)
+        decorate_ntips(tree)
+        decorate_name_counts(tree)
+
+        exp_root = {0: {'1': 6},
+                    1: {'2': 6},
+                    2: {'3': 6},
+                    3: {'4': 6},
+                    4: {'5': 3, 'a': 3},
+                    5: {'6': 4},
+                    6: {'7': 3, '8': 3}}
+
+        self.assertEqual(tree.TaxaCount, exp_root)
 
     def test_set_ranksafe(self):
         """correctly set ranksafe on tree"""
@@ -374,6 +400,28 @@ class NLevelTests(TestCase):
         self.assertEqual(tree.children[1].NumTips, 2)
         self.assertEqual(tree.children[0].children[0].NumTips, 2)
         self.assertEqual(tree.children[0].children[1].NumTips, 2)
+        
+    def test_decorate_ntips_rank(self):
+        """correctly decorate the tree with the NumTipsRank param"""
+        input = "(((a,b)c,(d,e,f)g)h,(i,j)k)l;"
+        tree = TreeNode.from_newick(input)
+        tips = dict([(tip.name, tip) for tip in tree.tips()])
+        tips['a'].Consensus = [1, 2, 3, 4, 5, 6, 7]
+        tips['b'].Consensus = [None, None, None, 5, None, None, None]
+        tips['d'].Consensus = [1, 2, 3, 4, 5, 6, 8]
+        tips['e'].Consensus = [None, None, None, None, None, None, None]
+        tips['f'].Consensus = [1, 2, 3, 4, 5, 6, 8]
+        tips['i'].Consensus = [1, 2, 3, 4, 5, 6, 8]
+        tips['j'].Consensus = [1, 2, 3, 4, 5, 6, 8]
+        decorate_ntips_rank(tree)
+        
+        self.assertEqual(tree.NumTipsRank[0], 5)
+        self.assertEqual(tree.NumTipsRank[1], 5)
+        self.assertEqual(tree.NumTipsRank[2], 5)
+        self.assertEqual(tree.NumTipsRank[3], 6)
+        self.assertEqual(tree.NumTipsRank[4], 5)
+        self.assertEqual(tree.NumTipsRank[5], 5)
+        self.assertEqual(tree.NumTipsRank[6], 5)
 
     def test_get_nearest_named_ancestor(self):
         """correctly get the nearest named ancestor"""
