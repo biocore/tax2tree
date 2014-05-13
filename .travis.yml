@@ -17,8 +17,9 @@ before_install:
 install:
   - conda create --yes -n env_name python=$TRAVIS_PYTHON_VERSION pip numpy=$NUMPY_VERSION nose pep8 Sphinx
   - source activate env_name
+  - pip install git+git://github.com/biocore/scikit-bio.git
   - pip install -e . --no-deps
 script:
   - nosetests
-  - pep8 biom setup.py
+  - pep8 setup.py
   - t2t --version
