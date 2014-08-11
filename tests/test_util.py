@@ -2,7 +2,7 @@
 
 from unittest import TestCase, main
 from t2t.util import combine_alignments, reroot, unzip
-from skbio.core.tree import TreeNode
+from skbio import TreeNode
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"

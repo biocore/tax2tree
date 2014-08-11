@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from skbio.parse.sequences import parse_fasta
+from skbio import parse_fasta
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -71,7 +71,7 @@ def unzip(items):
 
     Examples
     --------
-    >>> from skbio.util.misc import unzip
+    >>> from t2t.util import unzip
     >>> unzip([[1, 2], ['a', 'b']])
     [[1, 'a'], [2, 'b']]
 

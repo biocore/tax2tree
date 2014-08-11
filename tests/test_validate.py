@@ -2,7 +2,7 @@
 
 from unittest import TestCase, main
 
-from skbio.core.tree import TreeNode
+from skbio import TreeNode
 
 from t2t.validate import (check_parse, check_n_levels, check_gap,
                           check_prefixes, ParseError, cache_tipnames,

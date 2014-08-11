@@ -4,7 +4,7 @@ from collections import defaultdict
 from string import lower
 from operator import itemgetter, add
 from numpy import argmin, array, where
-from skbio.core.tree import TreeNode
+from skbio import TreeNode
 from t2t.util import unzip
 import re
 
@@ -263,7 +263,7 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
 
         n.ConsensusRelFreq = res_freq
         n.ValidRelFreq = res_valid
-        
+
 def decorate_name_counts(tree):
     """Decorates count information for names on the tree
 
@@ -277,7 +277,7 @@ def decorate_name_counts(tree):
     total_counts : dict of dict
         The return data from collect_names_at_ranks_counts
     """
-    
+
     tips = list(tree.tips())
     n_ranks = len(RANK_ORDER)
     n_ranks_it = range(n_ranks)
@@ -340,8 +340,8 @@ def decorate_ntips(tree):
             node.NumTips = node.Consensus != missing
         else:
             node.NumTips = sum(c.NumTips for c in node.children)
-     
-            
+
+
 def decorate_ntips_rank(tree):
     """Cache the number of informative tips at each rank for each node in the tree.
 
@@ -363,7 +363,7 @@ def decorate_ntips_rank(tree):
                 counts[r] = node.Consensus[r] != None
             else:
                 counts[r] = sum(c.NumTipsRank[r] for c in node.children)
-                
+
         node.NumTipsRank = counts
 
 
