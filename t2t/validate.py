@@ -18,7 +18,7 @@ def check_parse(line):
     except ValueError:
         raise ParseError("Unable to split in tab")
 
-    parsed = initial.split("; ")
+    parsed = tuple(initial.split("; "))
 
     if not len(parsed):
         raise ParseError("Line appears to not have a taxonomy")
@@ -34,19 +34,26 @@ def check_n_levels(parsed, n):
         return False
 
 
-def check_gap(parsed):
-    """Check that no gaps exist in parsed"""
+def find_gap(parsed):
+    """Find a gap else -1"""
     reduced = [p.split('__')[-1] for p in parsed]
 
     end_found = False
-    for n in reduced:
+    end_idx = -1
+
+    for idx, n in enumerate(reduced):
         if n and end_found:
-            return False
+            break
 
         if not n:
             end_found = True
+            end_idx = idx
 
-    return True
+    return end_idx if end_idx != len(parsed) - 1 else -1
+
+
+def check_gap(parsed):
+    return find_gap(parsed) == -1
 
 
 def check_prefixes(parsed, expected_prefixes):
@@ -102,17 +109,34 @@ def hierarchy_errors(tax_lines):
 
 def flat_errors(tax_lines):
     """Flat file errors"""
+    inc_prefix = 'Incorrect prefixes'
+    inc_nlevel = 'Incorrect number of levels'
+    inc_gap = 'Gaps in taxonomy'
+
     nlevels = len(RANK_ORDER)
     errors = defaultdict(list)
+    errors_seen = defaultdict(set)
 
     for line in tax_lines:
         id_, parsed = check_parse(line)
 
         if not check_prefixes(parsed, RANK_ORDER):
-            errors['Incorrect prefixes'].append(id_)
+            if parsed not in errors_seen[inc_prefix]:
+                errors_seen[inc_prefix].add(parsed)
+                errors[inc_prefix].append(id_)
+
         if not check_n_levels(parsed, nlevels):
-            errors['Incorrect number of levels'].append(id_)
+            if parsed not in errors_seen[inc_nlevel]:
+                errors_seen[inc_nlevel].add(parsed)
+                errors[inc_nlevel].append(id_)
+
         if not check_gap(parsed):
-            errors['Gaps in taxonomy'].append(id_)
+            gap_idx = find_gap(parsed)
+            taxon_following_gap = gap_idx + 1
+
+            # another +1 as the slice is exclusive
+            if parsed[:taxon_following_gap + 1] not in errors_seen[inc_gap]:
+                errors_seen[inc_gap].add(parsed[:taxon_following_gap + 1])
+                errors['Gaps in taxonomy'].append(id_)
 
     return errors

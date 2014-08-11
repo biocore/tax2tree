@@ -6,7 +6,7 @@ from skbio import TreeNode
 
 from t2t.validate import (check_parse, check_n_levels, check_gap,
                           check_prefixes, ParseError, cache_tipnames,
-                          get_polyphyletic)
+                          get_polyphyletic, find_gap)
 
 
 class VerifyTaxonomy(TestCase):
@@ -15,7 +15,7 @@ class VerifyTaxonomy(TestCase):
 
     def test_check_parse(self):
         """returns valid parsed or raises"""
-        exp = ("1", ["k__a", "p__b", "c__c", "o__d", "f__e", "g__f", "s__g"])
+        exp = ("1", ("k__a", "p__b", "c__c", "o__d", "f__e", "g__f", "s__g"))
         obs = check_parse(good_string)
         self.assertEqual(obs, exp)
 
@@ -49,10 +49,24 @@ class VerifyTaxonomy(TestCase):
         self.assertTrue(check_gap(parsed))
 
         id_, parsed = check_parse(good_trailing)
-        self.assertTrue(check_gap, parsed)
+        self.assertTrue(check_gap(parsed))
 
         id_, parsed = check_parse(gap)
         self.assertFalse(check_gap(parsed))
+
+    def test_find_gap(self):
+        good_string_idx = -1
+        gap_idx = 2
+        trailing_idx = -1
+
+        id_, parsed = check_parse(good_string)
+        self.assertEqual(find_gap(parsed), good_string_idx)
+
+        id_, parsed = check_parse(good_trailing)
+        self.assertEqual(find_gap(parsed), trailing_idx)
+
+        id_, parsed = check_parse(gap)
+        self.assertEqual(find_gap(parsed), gap_idx)
 
     def test_check_prefixes(self):
         """Verify the expected prefixes are present"""
