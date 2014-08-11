@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from string import lower
-from operator import itemgetter, add
+from operator import itemgetter
 from numpy import argmin, array, where
 from skbio import TreeNode
 from t2t.util import unzip
@@ -582,7 +582,6 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
             if name in cur_node.ChildLookup:
                 cur_node = cur_node.ChildLookup[name]
             else:
-                # print "adding to %s to %s" % (name, cur_node.name)
                 new_node = TreeNode(name=name)
                 new_node.Rank = rank
                 new_node.ChildLookup = {}
