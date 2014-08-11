@@ -419,7 +419,7 @@ def fpoint5measure(precision, recall):
 def f2measure(precision, recall):
     """Returns the f2measure (or F2-score)"""
     return (1.0 + (2 ** 2)) * ((precision * recall) /
-           ((2 ** 2 * precision) + recall))
+                               ((2 ** 2 * precision) + recall))
 
 
 def min_tips(nodes):
@@ -736,7 +736,6 @@ def commonname_promotion(tree):
             else:
                 push_name = False
 
-    #set_names_dict = {}
     # set the .name attribute on the tree based on .BackFillNames
     for node in tree.preorder(include_self=True):
         if node.is_tip():
