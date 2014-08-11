@@ -12,7 +12,7 @@ before_install:
 install:
   - conda create --yes -n env_name python=$PYTHON_VERSION pip numpy=$NUMPY_VERSION scipy matplotlib nose pep8 Sphinx
   - source activate env_name
-  - pip install sphinx-bootstrap-theme future coveralls natsort pyflakes flake8 python-dateutil
+  - pip install sphinx-bootstrap-theme future coveralls natsort pyflakes flake8 python-dateutil scikit-bio
   - pip install -e . --no-deps
 script:
   - if [ ${WITH_DOCTEST} ]; then PYTHONWARNINGS=ignore nosetests --with-doctest --with-coverage -I DONOTIGNOREANYTHING; else PYTHONWARNINGS=ignore nosetests --with-coverage -I DONOTIGNOREANYTHING; fi
