@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
+
 def parse_otu_map(lines):
     """Returns {rep: [members]}, members include rep"""
     res = {}
     for l in lines:
         fields = l.strip().split('\t')
-        c_id = fields[0]
         rep = fields[1]
         members = fields[1:]
         res[rep] = members
     return res
+
 
 def members_to_rep(otus):
     """Provides a lookup for a cluster member to its rep"""
@@ -18,6 +19,7 @@ def members_to_rep(otus):
         for member in members:
             res[member] = rep
     return res
+
 
 def remap_taxonomy(mapping, taxa):
     """Remaps the taxonomy over the OTU clusters"""

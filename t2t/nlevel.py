@@ -264,6 +264,7 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
         n.ConsensusRelFreq = res_freq
         n.ValidRelFreq = res_valid
 
+
 def decorate_name_counts(tree):
     """Decorates count information for names on the tree
 
@@ -294,6 +295,7 @@ def decorate_name_counts(tree):
                 counts[cur_rank][cur_name] += 1
 
         n.TaxaCount = counts
+
 
 def set_ranksafe(tree):
     """Determines what ranks are safe for a given node
@@ -343,11 +345,11 @@ def decorate_ntips(tree):
 
 
 def decorate_ntips_rank(tree):
-    """Cache the number of informative tips at each rank for each node in the tree.
+    """Cache the number of informative tips for each rank for each node.
 
-    This method will set NumTipsRank as the number of informative tips that descend
-    from a given node for each rank. Informative is based on the presence of taxonomy
-    information at a tip for a give rank.
+    This method will set NumTipsRank as the number of informative tips that
+    descend from a given node for each rank. Informative is based on the
+    presence of taxonomy information at a tip for a give rank.
 
     Parameters
     ----------
@@ -360,7 +362,7 @@ def decorate_ntips_rank(tree):
         counts = defaultdict(int)
         for r in xrange(n_ranks):
             if node.is_tip():
-                counts[r] = node.Consensus[r] != None
+                counts[r] = node.Consensus[r] is not None
             else:
                 counts[r] = sum(c.NumTipsRank[r] for c in node.children)
 
@@ -626,7 +628,6 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
     We set the attribute BackFillNames here as we want to attempt to collapse
     names later if we sanely and easily can
     """
-    n_ranks = len(RANK_ORDER) - 1
     for node in tree.non_tips(include_self=True):
 
         if node.name is not None:
@@ -896,7 +897,7 @@ def is_float(s):
         return False
 
     try:
-        test = float(s)
+        float(s)
         return True
     except:
         return False
