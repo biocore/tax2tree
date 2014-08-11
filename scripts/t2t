@@ -108,8 +108,26 @@ def remap(otus, consensus_map, output):
 def fetch(tree, output):
     """Fetch the taxonomy off the tree"""
     t = TreeNode.from_newick(tree)
-    res = nl.pull_consensus_strings(t)
-    output.write('\n'.join(res))
+    ranks = set(nl.RANK_ORDER)
+
+    failed_nodes = []
+    for n in t.non_tips():
+        if n.name and n.name[0] not in ranks:
+            failed_nodes.append(n)
+
+    if failed_nodes:
+        for n in failed_nodes:
+            tip = list(n.tips())[0]
+            tip_id = tip.name
+            path = [a.name for a in tip.ancestors() if a.name is not None]
+            print "Unknown rank: %s" % n.name
+            print "\tA tip ID from the clade: %s" % tip_id
+            print "\tCurrent lineage in tree: %s" % '; '.join(path[::-1])
+
+        exit(1)
+    else:
+        res = nl.pull_consensus_strings(t)
+        output.write('\n'.join(res))
 
 
 @cli.command()
