@@ -18,7 +18,7 @@ def check_parse(line):
     except ValueError:
         raise ParseError("Unable to split in tab")
 
-    parsed = tuple(initial.split("; "))
+    parsed = tuple([n.strip() for n in initial.split(";")])
 
     if not len(parsed):
         raise ParseError("Line appears to not have a taxonomy")
