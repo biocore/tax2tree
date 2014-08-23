@@ -59,7 +59,11 @@ def check_gap(parsed):
 def check_prefixes(parsed, expected_prefixes):
     """Make sure each rank has the expected prefix"""
     for name, prefix in zip(parsed, expected_prefixes):
-        obs, level_name = name.split('__', 1)
+        try:
+            obs, level_name = name.split('__', 1)
+        except ValueError:
+            return False
+
         if obs != prefix:
             return False
 

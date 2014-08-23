@@ -77,6 +77,9 @@ class VerifyTaxonomy(TestCase):
         id_, parsed = check_parse(bad_prefix)
         self.assertFalse(check_prefixes(parsed, prefixes))
 
+        id_, parsed = check_parse(no_prefix)
+        self.assertFalse(check_prefixes(parsed, prefixes))
+
     def test_cache_tipnames(self):
         """caches tipnames"""
         t = TreeNode.from_newick("((a,b)c,(d,e)f)g;")
@@ -121,6 +124,8 @@ bad_unclassified3 = "60	k__x; "
 bad_unclassified4 = "70	k__x"
 bad_nlevels = "80	k__a; p__b; c__c"
 bad_prefix = "1	k__a; p__b; c__c; q__d; f__e; g__f; s__g"
+no_prefix = "1	k__a; b; c; d; e; f; g"
+
 
 if __name__ == '__main__':
     main()
