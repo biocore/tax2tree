@@ -5,7 +5,7 @@ import t2t.validate as val
 
 
 def fetch(tree):
-    t = TreeNode.from_newick(tree)
+    t = TreeNode.from_newick(open(tree))
     ranks = set(nl.RANK_ORDER)
     res = []
     error = True
