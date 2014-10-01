@@ -73,14 +73,15 @@ def load_consensus_map(lines, append_rank, check_bad=True,
     for line in lines:
         id_, consensus = line.strip().split('\t')
 
-        names = consensus.split('; ')
+        names = names = [n.strip() for n in consensus.split(';')]
 
         if check_euk_unc and 'Eukaryota' in names[0] or \
                 'Unclassified' in names[0]:
             names = [None] * n_ranks
 
         if assert_nranks:
-            assert len(names) == n_ranks
+            if len(names) != n_ranks:
+                raise ValueError
 
         # clean up missing names
         for idx in range(n_ranks):

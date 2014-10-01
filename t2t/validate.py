@@ -18,7 +18,7 @@ def check_parse(line):
     except ValueError:
         raise ParseError("Unable to split in tab")
 
-    parsed = tuple(initial.split("; "))
+    parsed = tuple([n.strip() for n in initial.split(";")])
 
     if not len(parsed):
         raise ParseError("Line appears to not have a taxonomy")
@@ -59,7 +59,11 @@ def check_gap(parsed):
 def check_prefixes(parsed, expected_prefixes):
     """Make sure each rank has the expected prefix"""
     for name, prefix in zip(parsed, expected_prefixes):
-        obs, level_name = name.split('__', 1)
+        try:
+            obs, level_name = name.split('__', 1)
+        except ValueError:
+            return False
+
         if obs != prefix:
             return False
 
