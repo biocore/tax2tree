@@ -27,7 +27,7 @@ class ConsistencyTests(TestCase):
         pass
 
     def tearDown(self):
-        nl.set_rank_order(['k', 'p', 'c', 'o', 'f', 'g', 's'])
+        nl.set_rank_order(['d', 'p', 'c', 'o', 'f', 'g', 's'])
 
     def test_consistency_missing(self):
         """Test consistency of taxa in tree with missing taxa"""
