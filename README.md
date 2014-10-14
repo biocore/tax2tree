@@ -1,6 +1,8 @@
 tax2tree
 ========
 
+[![Build Status](https://travis-ci.org/biocore/tax2tree.png?branch=master)](https://travis-ci.org/biocore/tax2tree) [![Coverage Status](https://coveralls.io/repos/biocore/tax2tree/badge.png)](https://coveralls.io/r/biocore/tax2tree)
+
 tax2tree assists in decorating an existing taxonomy onto a phylogenetic tree
 with overlapping tip names.
 
