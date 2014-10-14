@@ -18,7 +18,7 @@ __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
 
 
-RANK_ORDER = ['k', 'p', 'c', 'o', 'f', 'g', 's']
+RANK_ORDER = ['d', 'p', 'c', 'o', 'f', 'g', 's']
 BAD_NAMES = [
     'environmental sample', 'uncultured', 'UNNAMEABLE', 'unclassified',
     'unidentified', 'cluster', 'isolate', 'environmental samples']

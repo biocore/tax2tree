@@ -77,9 +77,9 @@ class NLevelTests(TestCase):
                         'bar': ['h', 'i', 'j', 'k', 'l', 'm', 'n'],
                         'foobar': ['h', 'i', 'j', None, 'l', None, None]}
         exp_append = {
-            'foo': ['k__a', 'p__b', 'c__c', 'o__d', 'f__e', 'g__f', 's__g'],
-            'bar': ['k__h', 'p__i', 'c__j', 'o__k', 'f__l', 'g__m', 's__n'],
-            'foobar': ['k__h', 'p__i', 'c__j', 'o__', 'f__l', 'g__', 's__']}
+            'foo': ['d__a', 'p__b', 'c__c', 'o__d', 'f__e', 'g__f', 's__g'],
+            'bar': ['d__h', 'p__i', 'c__j', 'o__k', 'f__l', 'g__m', 's__n'],
+            'foobar': ['d__h', 'p__i', 'c__j', 'o__', 'f__l', 'g__', 's__']}
         obs_noappend = load_consensus_map(input, False)
         obs_append = load_consensus_map(input, True)
         self.assertEqual(obs_noappend, exp_noappend)
