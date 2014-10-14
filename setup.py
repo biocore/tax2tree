@@ -40,7 +40,7 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd:
     install_requires = []
 else:
-    install_requires = ['numpy >= 1.7', 'future', 'scikit-bio', 'Click']
+    install_requires = ['numpy >= 1.7', 'future==0.13.1', 'scikit-bio', 'Click']
 
 setup(name='tax2tree',
       version=__version__,
