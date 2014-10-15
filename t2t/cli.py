@@ -56,4 +56,3 @@ def validate(lines, limit, flat_errors, hierarchy_errors):
                 res.append("\t\t%s, %s" % (parent, err['Parents'][parent]))
 
     return res, False
-
