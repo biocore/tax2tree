@@ -11,7 +11,7 @@ tax2tree is installed and paths are setup appropriately (see INSTALL), you can
 run the following to reproduce the output seen in Figure 1 in 
 [McDonald et al. 2011](http://www.ncbi.nlm.nih.gov/pubmed/22134646).
 
-    $ t2t -t tests/data/test.ntree -m tests/data/tests.con -o test_output
+    $ t2t decorate -t tests/data/test_consistency.ntree -m tests/data/test_consistency.cons -o test_output
 
 Contact information
 -------------------
