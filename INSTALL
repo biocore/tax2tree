@@ -9,5 +9,5 @@ $ python setup.py install --prefix=$HOME
 
 and it will be placed into your path. To run, just call:
 
-$ nlevel
+$ t2t
 
