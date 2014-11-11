@@ -2,7 +2,7 @@
 
 """nlevel tests
 
-While many of the tests utilize similar trees and data data, the overlap
+While many of the tests utilize similar trees and input data, the overlap
 is not necessarily 100%. Many of these inputs are written with specific tests
 in mind.
 """
