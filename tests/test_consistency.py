@@ -21,6 +21,8 @@ from unittest import TestCase, main
 import t2t.nlevel as nl
 from t2t.consistency import Consistency
 
+from io import StringIO
+
 class ConsistencyTests(TestCase):
 
     def setUp(self):
@@ -40,7 +42,7 @@ class ConsistencyTests(TestCase):
                        'd': ['f__Lachnospiraceae', 'g__Bacteroides', 's__Bacteroides pectinophilus'],
                        'g': [None, None, None], 'f': ['f__Lachnospiraceae', 'g__Lachnospira', None],
                        'h': ['f__Lachnospiraceae', 'g__Lachnospira', 's__Bacteroides pectinophilus']}
-        tree = nl.load_tree('(((a,b),(c,d)),((e,f),(g,h)));', tipname_map)
+        tree = nl.load_tree(StringIO(u'(((a,b),(c,d)),((e,f),(g,h)));'), tipname_map)
 
         counts = nl.collect_names_at_ranks_counts(tree)
         nl.decorate_ntips_rank(tree)
@@ -75,7 +77,7 @@ class ConsistencyTests(TestCase):
                        'd': ['f__Lachnospiraceae', 'g__Bacteroides', 's__Bacteroides acidifaciens'],
                        'e': ['f__Lachnospiraceae', 'g__Bacteroides', 's__Bacteroides acidifaciens']}
 
-        tree = nl.load_tree('((a,b),(c,(d,e)));', tipname_map)
+        tree = nl.load_tree(StringIO(u'((a,b),(c,(d,e)));'), tipname_map)
 
         counts = nl.collect_names_at_ranks_counts(tree)
         nl.decorate_ntips_rank(tree)
