@@ -1,13 +1,14 @@
 tax2tree INSTALL notes
 ----------------------
 
-tax2tree depends on PyCogent >= 1.5 (http://pycogent.sourceforge.net) and 
-Python >= 2.6. Once those are installed and working, run
+tax2tree depends on Python >= 2.6 and the modules numpy >= 1.7,
+future 0.13.1, scikit-bio and Click. Once those are installed and
+working, run:
 
 $ python setup.py build
 $ python setup.py install --prefix=$HOME
 
-and it will be placed into your path. To run, just call:
+and tax2tree will be placed into your path. To run, just call:
 
-$ nlevel
+$ t2t
 

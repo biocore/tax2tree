@@ -434,8 +434,7 @@ def min_tips(nodes):
         if n is None:
             scores.append(99999999999)
         else:
-            num_tips = len(list(n.tips()))
-            scores.append(num_tips)
+            scores.append(len(list(n.tips())))
     return nodes[argmin(scores)]
 
 
