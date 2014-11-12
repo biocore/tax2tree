@@ -4,6 +4,8 @@ from unittest import TestCase, main
 
 from skbio import TreeNode
 
+from StringIO import StringIO
+
 from t2t.validate import (check_parse, check_n_levels, check_gap,
                           check_prefixes, ParseError, cache_tipnames,
                           get_polyphyletic, find_gap)
@@ -82,7 +84,7 @@ class VerifyTaxonomy(TestCase):
 
     def test_cache_tipnames(self):
         """caches tipnames"""
-        t = TreeNode.from_newick("((a,b)c,(d,e)f)g;")
+        t = TreeNode.read(StringIO(u"((a,b)c,(d,e)f)g;"))
         cache_tipnames(t)
 
         self.assertEqual(t.tip_names, ['a', 'b', 'd', 'e'])

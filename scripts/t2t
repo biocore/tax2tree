@@ -10,15 +10,15 @@ import t2t.remap as rmap
 import t2t.consistency as con
 import t2t.cli as t2tcli
 
-
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
     click.echo('Version %s' % t2t.__version__)
     ctx.exit()
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-@click.group()
+@click.group(context_settings=CONTEXT_SETTINGS)
 @click.option('--version', is_flag=True, callback=print_version,
               expose_value=False, is_eager=True)
 @click.pass_context
@@ -35,9 +35,11 @@ def cli(ctx):
 def decorate(tree, consensus_map, output):
     """Decorate a taxonomy onto a tree"""
     append_rank = False
+    
+    # get desired ranks from first line of consensus map
     seed_con = consensus_map.readline().strip().split('\t')[1]
-
     nl.determine_rank_order(seed_con)
+    consensus_map.seek(0)
 
     tipname_map = nl.load_consensus_map(consensus_map, append_rank)
     tree_ = nl.load_tree(tree, tipname_map)
@@ -62,9 +64,7 @@ def decorate(tree, consensus_map, output):
     f.close()
 
     nl.save_bootstraps(tree_)
-    f = open(output, 'w')
-    f.write(tree_.to_newick(with_distances=True))
-    f.close()
+    tree_.write(output)
 
 
 @cli.command()
@@ -79,8 +79,7 @@ def reroot(tree, tips, output):
     tipnames = set([l.strip() for l in tips])
     tree_ = TreeNode.from_newick(tree)
     rerooted = ut.reroot(tree_, tipnames)
-
-    output.write(rerooted.to_newick(with_distances=True))
+    rerooted.write(output)
 
 
 @cli.command()
