@@ -35,9 +35,11 @@ def cli(ctx):
 def decorate(tree, consensus_map, output):
     """Decorate a taxonomy onto a tree"""
     append_rank = False
+    
+    # get desired ranks from first line of consensus map
     seed_con = consensus_map.readline().strip().split('\t')[1]
-
     nl.determine_rank_order(seed_con)
+    consensus_map.seek(0)
 
     tipname_map = nl.load_consensus_map(consensus_map, append_rank)
     tree_ = nl.load_tree(tree, tipname_map)
