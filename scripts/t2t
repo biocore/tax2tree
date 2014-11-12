@@ -10,15 +10,15 @@ import t2t.remap as rmap
 import t2t.consistency as con
 import t2t.cli as t2tcli
 
-
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
     click.echo('Version %s' % t2t.__version__)
     ctx.exit()
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-@click.group()
+@click.group(context_settings=CONTEXT_SETTINGS)
 @click.option('--version', is_flag=True, callback=print_version,
               expose_value=False, is_eager=True)
 @click.pass_context
