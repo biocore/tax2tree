@@ -10,6 +10,7 @@ import t2t.remap as rmap
 import t2t.consistency as con
 import t2t.cli as t2tcli
 
+
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
@@ -17,6 +18,7 @@ def print_version(ctx, param, value):
     ctx.exit()
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option('--version', is_flag=True, callback=print_version,
@@ -35,7 +37,7 @@ def cli(ctx):
 def decorate(tree, consensus_map, output):
     """Decorate a taxonomy onto a tree"""
     append_rank = False
-    
+
     # get desired ranks from first line of consensus map
     seed_con = consensus_map.readline().strip().split('\t')[1]
     nl.determine_rank_order(seed_con)
@@ -137,30 +139,30 @@ def validate(taxonomy, limit, flat_errors, hierarchy_errors):
 @click.option('--quiet', is_flag=True, default=False, help='Suppress output')
 def consistency(tree, consensus_map, output_file, rooted, quiet):
     """Consistency of a tree relative to taxonomy"""
-    
+
     if not quiet:
         print 'Determining taxonomic consistency of: '
         print '  tree = ' + tree.name
         print '  consensus-map = ' + consensus_map.name
         print '  rooted = ' + str(rooted)
         print ''
-        
+
     # dynamically determine taxonomic ranks
     seed_con = consensus_map.readline().strip().split('\t')[1]
     nl.determine_rank_order(seed_con)
 
-    tipname_map = nl.load_consensus_map(consensus_map, append_rank = False)    
+    tipname_map = nl.load_consensus_map(consensus_map, append_rank=False)
     tree = nl.load_tree(tree, tipname_map)
-    
+
     counts = nl.collect_names_at_ranks_counts(tree)
     nl.decorate_ntips_rank(tree)
     nl.decorate_name_counts(tree)
-    
+
     # determine taxonomic consistency of tree
     c = con.Consistency(counts, len(nl.RANK_ORDER))
     consistency_index = c.calculate(tree, rooted)
     c.write(output_file, consistency_index)
-    
+
     if not quiet:
         print 'Consistency written to: ' + output_file
 

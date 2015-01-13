@@ -34,7 +34,7 @@ def set_rank_order(order):
 
 def determine_rank_order(con):
     """Determines dynamically rank order based on first input con string"""
-    order = [s[0] for s in con.split(';')]
+    order = [s.strip()[0] for s in con.split(';')]
     global RANK_ORDER
     RANK_ORDER = order
 
@@ -111,6 +111,7 @@ def load_consensus_map(lines, append_rank, check_bad=True,
                 else:
                     names[idx] = "%s__" % RANK_ORDER[idx]
         mapping[id_] = names
+
     return mapping
 
 
@@ -144,7 +145,7 @@ def load_tree(tree, tipname_map):
 
     """
     if not isinstance(tree, TreeNode):
-        tree = TreeNode.read(tree)
+        tree = TreeNode.read(tree, convert_underscores=False)
 
     n_ranks = len(RANK_ORDER)
 
@@ -683,7 +684,7 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
     names = [name]
     curr = node.parent
 
-    for i in range(1, levels):
+    for _ in range(1, levels):
         if curr.Rank is None:
             # at root...
             break
