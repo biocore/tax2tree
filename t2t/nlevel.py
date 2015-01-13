@@ -38,6 +38,8 @@ def determine_rank_order(con):
     global RANK_ORDER
     RANK_ORDER = order
 
+    return order
+
 
 def has_badname(name):
     """Boolean, if name contains a badname"""
@@ -447,8 +449,10 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
     for names and nodes, we can then pick the 'best' node out of the dict
     to avoid horrible lookups in the tree
     """
+
     if verbose:
         print "Starting name_node_score_fold..."
+
     name_node_score = {i: {} for i in range(len(RANK_ORDER))}
     n_ranks = len(RANK_ORDER)
 
@@ -534,6 +538,7 @@ def set_preliminary_name_and_rank(tree):
 
     This method is destructive: will destroy the Name attribute on tree
     """
+
     n_ranks = len(RANK_ORDER)
     empty_ranknames = [None] * n_ranks
 
@@ -555,6 +560,7 @@ def set_preliminary_name_and_rank(tree):
 
 def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     """Returns a mapping by rank for names to their parent names and counts"""
+
     god_node = TreeNode(name=None)
     god_node.Rank = None
 

@@ -46,6 +46,7 @@ def decorate(tree, consensus_map, output):
     tipname_map = nl.load_consensus_map(consensus_map, append_rank)
     tree_ = nl.load_tree(tree, tipname_map)
     counts = nl.collect_names_at_ranks_counts(tree_)
+
     nl.decorate_ntips(tree_)
     nl.decorate_name_relative_freqs(tree_, counts, 2)
     nl.set_ranksafe(tree_)

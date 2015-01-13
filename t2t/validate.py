@@ -3,7 +3,7 @@
 from collections import defaultdict
 from operator import add
 
-from t2t.nlevel import RANK_ORDER, make_consensus_tree, load_consensus_map
+from t2t.nlevel import determine_rank_order, make_consensus_tree, load_consensus_map
 from t2t.util import unzip
 
 
@@ -117,14 +117,17 @@ def flat_errors(tax_lines):
     inc_nlevel = 'Incorrect number of levels'
     inc_gap = 'Gaps in taxonomy'
 
-    nlevels = len(RANK_ORDER)
+    seed_con = tax_lines[0].strip().split('\t')[1]
+    rank_order = determine_rank_order(seed_con)
+
+    nlevels = len(rank_order)
     errors = defaultdict(list)
     errors_seen = defaultdict(set)
 
     for line in tax_lines:
         id_, parsed = check_parse(line)
 
-        if not check_prefixes(parsed, RANK_ORDER):
+        if not check_prefixes(parsed, rank_order):
             if parsed not in errors_seen[inc_prefix]:
                 errors_seen[inc_prefix].add(parsed)
                 errors[inc_prefix].append(id_)
