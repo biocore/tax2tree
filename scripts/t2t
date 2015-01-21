@@ -130,6 +130,8 @@ def validate(taxonomy, limit, flat_errors, hierarchy_errors):
 
     print '\n'.join(result)
 
+    print 'Validation complete.'
+
 @cli.command()
 @click.option('--consensus-map', '-m', required=True,
               help='Input consensus map', type=click.File('U'))

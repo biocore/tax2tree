@@ -289,7 +289,7 @@ class NLevelTests(TestCase):
         set_ranksafe(tree)
         pick_names(tree)
 
-        #result = best_name_freqs_for_nodes(tree)
+        # result = best_name_freqs_for_nodes(tree)
         cnode = tree.children[0]
         hnode = tree.children[1]
         knode = tree.children[2]
@@ -363,7 +363,7 @@ class NLevelTests(TestCase):
         exp_str = "(((((((g)f)e)d,(((y)x)))c)b)a,((((((n,q)m)l)k)j)i)h);"
 
         obs_root, lookup = make_consensus_tree(data, check_for_rank=False)
-        
+
         fp = StringIO()
         obs_root.write(fp)
 
@@ -383,10 +383,10 @@ class NLevelTests(TestCase):
 
         obs_root, lookup = make_consensus_tree(
             data, check_for_rank=False, tips=input_ids)
-        
+
         fp = StringIO()
         obs_root.write(fp)
-        
+
         self.assertEqual(fp.getvalue().strip(), exp_str)
         self.assertNotIn(None, lookup)
 
@@ -451,7 +451,7 @@ class NLevelTests(TestCase):
         data = StringIO(u"((((1)s1,(2)s2),((3)s3,(4)s5)))o1;")
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
-        #exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
+        # exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
         t = TreeNode.read(data)
         t.Rank = 3
         t.children[0].Rank = None
@@ -483,7 +483,7 @@ class NLevelTests(TestCase):
         data = "((((1),(2)),((3),(4))))'o1; f1';"
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
-        #exp = "((((1),(2)),((3),(4))))'o1; f1';"
+        # exp = "((((1),(2)),((3),(4))))'o1; f1';"
 
     def test_commonname_promotion(self):
         """correctly promote names if possible"""
@@ -506,10 +506,10 @@ class NLevelTests(TestCase):
         t.children[0].children[1].children[1].Rank = 6
         backfill_names_gap(t, lookup)
         commonname_promotion(t)
-        
+
         fp = StringIO()
         t.write(fp)
-        
+
         self.assertEqual(fp.getvalue().strip(), exp)
 
 if __name__ == '__main__':
