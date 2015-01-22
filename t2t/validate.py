@@ -3,7 +3,9 @@
 from collections import defaultdict
 from operator import add
 
-from t2t.nlevel import determine_rank_order, make_consensus_tree, load_consensus_map
+from t2t.nlevel import (determine_rank_order,
+                        make_consensus_tree,
+                        load_consensus_map)
 from t2t.util import unzip
 
 

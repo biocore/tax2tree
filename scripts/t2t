@@ -112,7 +112,7 @@ def fetch(tree, output):
     """Fetch the taxonomy off the tree"""
     result, error = t2tcli.fetch(tree)
     if error:
-        print '\n'.join(result)
+        click.echo('\n'.join(result))
     else:
         output.write('\n'.join(result))
 
@@ -128,9 +128,8 @@ def validate(taxonomy, limit, flat_errors, hierarchy_errors):
     lines = taxonomy.readlines()
     result, err = t2t.cli.validate(lines, limit, flat_errors, hierarchy_errors)
 
-    print '\n'.join(result)
-
-    print 'Validation complete.'
+    click.echo('\n'.join(result))
+    click.echo('Validation complete.')
 
 @cli.command()
 @click.option('--consensus-map', '-m', required=True,
@@ -139,16 +138,16 @@ def validate(taxonomy, limit, flat_errors, hierarchy_errors):
 @click.option('--tree', '-t', required=True, help='Input tree',
               type=click.File('U'))
 @click.option('--rooted/--unrooted', default=True, help='Treat tree as rooted or unrooted')
-@click.option('--quiet', is_flag=True, default=False, help='Suppress output')
-def consistency(tree, consensus_map, output_file, rooted, quiet):
+@click.option('--verbose', is_flag=True, default=False, help='Provide detailed output')
+def consistency(tree, consensus_map, output_file, rooted, verbose):
     """Consistency of a tree relative to taxonomy"""
 
-    if not quiet:
-        print 'Determining taxonomic consistency of: '
-        print '  tree = ' + tree.name
-        print '  consensus-map = ' + consensus_map.name
-        print '  rooted = ' + str(rooted)
-        print ''
+    if verbose:
+        click.echo('Determining taxonomic consistency of: ')
+        click.echo('  tree = ' + tree.name)
+        click.echo('  consensus-map = ' + consensus_map.name)
+        click.echo('  rooted = ' + str(rooted))
+        click.echo('')
 
     # dynamically determine taxonomic ranks
     seed_con = consensus_map.readline().strip().split('\t')[1]
@@ -166,8 +165,8 @@ def consistency(tree, consensus_map, output_file, rooted, quiet):
     consistency_index = c.calculate(tree, rooted)
     c.write(output_file, consistency_index)
 
-    if not quiet:
-        print 'Consistency written to: ' + output_file
+    if verbose:
+        click.echo('Consistency written to: ' + output_file)
 
 
 if __name__ == '__main__':
