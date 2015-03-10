@@ -34,7 +34,16 @@ def cli(ctx):
 @click.option('--output', '-o', required=True, help='Output basename')
 @click.option('--tree', '-t', required=True, help='Input tree',
               type=click.File('U'))
-def decorate(tree, consensus_map, output):
+@click.option('--no-suffix', '-n',
+              help="Don't append suffixes (e.g. _1, _2) to polyphyletic " +
+                   "groups",
+              is_flag=True, default=False)
+@click.option('--suffix-char', '-s',
+              help="Use a different char (instead of underscore) for " +
+                   "polyphyletic group suffixes",
+              required=False, default="_", type=str)
+
+def decorate(tree, consensus_map, output, no_suffix, suffix_char):
     """Decorate a taxonomy onto a tree"""
     append_rank = False
 
@@ -58,7 +67,9 @@ def decorate(tree, consensus_map, output):
     contree, contree_lookup = nl.make_consensus_tree(tipname_map.values())
     nl.backfill_names_gap(tree_, contree_lookup)
     nl.commonname_promotion(tree_)
-    nl.make_names_unique(tree_)
+
+    if not no_suffix:
+        nl.make_names_unique(tree_, suffix_glue_char=suffix_char)
 
     constrings = nl.pull_consensus_strings(tree_)
 

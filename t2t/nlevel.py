@@ -776,7 +776,7 @@ class TaxaName(object):
         return request
 
 
-def make_names_unique(tree, append_suffix=True, verbose=False):
+def make_names_unique(tree, append_suffix=True, suffix_glue_char='_', verbose=False):
     """Appends on a unique number if multiple of the same names exist
 
     ordered by number of tips, ie, _1 has more tips that _2
@@ -806,7 +806,7 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
             if count > 0:
                 if node.BackFillNames[idx].split('__')[1] != '':
                     if append_suffix:
-                        unique_name = '_'.join(
+                        unique_name = suffix_glue_char.join(
                             [node.BackFillNames[idx], str(count)])
                         node.BackFillNames[idx] = unique_name
 
