@@ -46,7 +46,7 @@ def decorate(tree, consensus_map, output):
     nl.decorate_name_relative_freqs(tree_, counts, 2)
     nl.set_ranksafe(tree_)
     nl.pick_names(tree_)
-    nl.name_node_score_fold(tree_)
+    scores = nl.name_node_score_fold(tree_)
 
     nl.set_preliminary_name_and_rank(tree_)
 
@@ -66,6 +66,12 @@ def decorate(tree, consensus_map, output):
     f.write(tree_.to_newick(with_distances=True))
     f.close()
 
+    f = open(output + '-fmeasures', 'w')
+    f.write('#taxon\tscore\n')
+    for rank in scores:
+        for name, score in sorted(scores[rank])[::-1]:
+            f.write("%s\t%f\n" % (name, score))
+    f.close()
 
 @cli.command()
 @click.option('--tree', '-t', required=True, help='Input tree',

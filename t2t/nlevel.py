@@ -477,11 +477,16 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
             name_node_score[rank][name].append((node, score))
 
     # run through the built up dict and pick the best node for a name
+    used_scores = {}
     for rank, names in name_node_score.items():
+        used_scores[rank] = []
+
         for name, node_scores in names.items():
             node_scores_sorted = sorted(node_scores, key=itemgetter(1))[::-1]
             nodes, scores = unzip(node_scores_sorted)
             scores = array(scores)
+
+            used_scores[rank].append((name, scores[0]))
 
             # if there is a tie in scores...
             if sum(scores == scores[0]) > 1:
@@ -503,6 +508,7 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
                 for node, score in node_scores_sorted[1:]:
                     node.RankNames[rank] = None
 
+    return used_scores
 
 def score_tree(tree, verbose=False):
     """Scores the tree based on RankNameScores and tip coverage
