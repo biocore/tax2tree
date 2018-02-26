@@ -793,13 +793,13 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
     # assign unique numbers based on the number of tips that descend
     for name, scores_and_nodes in name_lookup.items():
         sorted_scores = sorted(scores_and_nodes)[::-1]
-        for count, (score, idx, node) in enumerate(sorted_scores):
-            # only assign a number of we have more than 1
-            if count > 0:
+        if len(sorted_scores) > 1:
+            # assign incremental numbers 1, 2, 3... if we have more than 1
+            for count, (score, idx, node) in enumerate(sorted_scores):
                 if node.BackFillNames[idx].split('__')[1] != '':
                     if append_suffix:
                         unique_name = '_'.join(
-                            [node.BackFillNames[idx], str(count)])
+                            [node.BackFillNames[idx], str(count + 1)])
                         node.BackFillNames[idx] = unique_name
 
     # should probably be refactored, but assign .name based on .BackFillNames
