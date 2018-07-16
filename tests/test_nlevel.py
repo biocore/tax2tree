@@ -28,7 +28,7 @@ from t2t.nlevel import (load_consensus_map, collect_names_at_ranks_counts,
                         validate_all_paths, score_tree)
 
 from skbio import TreeNode
-from StringIO import StringIO
+from io import StringIO
 
 class NLevelTests(TestCase):
 

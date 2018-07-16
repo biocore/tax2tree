@@ -57,7 +57,7 @@ class Consistency(object):
         consistency_index = {i: defaultdict(int) for i in range(self.n_ranks)}
         for n in tree.traverse(include_self=True):
             for rank in range(self.n_ranks):
-                for name, total_taxa_cnt in self.taxa_counts[rank].iteritems():
+                for name, total_taxa_cnt in self.taxa_counts[rank].items():
                     node_taxa_count = n.TaxaCount[rank].get(name, 0)
                     incongruent_taxa = n.NumTipsRank[rank] - node_taxa_count
 
@@ -93,7 +93,7 @@ class Consistency(object):
         fout = open(output_file, 'w')
         fout.write('Taxon\tCount\tConsistency\n')
         for rank in range(self.n_ranks):
-            for name, consistency in consistency_index[rank].iteritems():
+            for name, consistency in consistency_index[rank].items():
                 fout.write('%s\t%d\t%.3f\n' % (name,
                                                self.taxa_counts[rank][name],
                                                consistency))
@@ -116,7 +116,7 @@ class Consistency(object):
         fout.write('Rank #\tRank prefix\t# taxon\tAverage consistency\n')
         for rank in range(self.n_ranks):
             val = []
-            for name, consistency in consistency_index[rank].iteritems():
+            for name, consistency in consistency_index[rank].items():
                 if self.taxa_counts[rank][name] >= min_taxa:
                     val.append(consistency)
 

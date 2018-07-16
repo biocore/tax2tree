@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
-from string import lower
 from operator import itemgetter
 from numpy import argmin, array, where
 from skbio import TreeNode
@@ -23,7 +22,7 @@ BAD_NAMES = [
     'environmental sample', 'uncultured', 'UNNAMEABLE', 'unclassified',
     'unidentified', 'cluster', 'isolate', 'environmental samples']
 
-BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(lower, BAD_NAMES)))
+BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(str.lower, BAD_NAMES)))
 
 
 def set_rank_order(order):
@@ -256,8 +255,8 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
         res_valid = {i: {} for i in n_ranks_it}
 
         # collect frequency information of the names per rank
-        for rank, names in counts.iteritems():
-            for name, name_counts in counts[rank].iteritems():
+        for rank, names in counts.items():
+            for name, name_counts in counts[rank].items():
                 if name_counts < min_count:
                     continue
 

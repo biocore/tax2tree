@@ -4,7 +4,7 @@ from unittest import TestCase, main
 from t2t.util import combine_alignments, reroot, unzip
 from skbio import TreeNode
 
-from StringIO import StringIO
+from io import StringIO
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
