@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from operator import add
+from functools import reduce
 
 from t2t.nlevel import (determine_rank_order,
                         make_consensus_tree,

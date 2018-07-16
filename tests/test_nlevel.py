@@ -364,10 +364,7 @@ class NLevelTests(TestCase):
 
         obs_root, lookup = make_consensus_tree(data, check_for_rank=False)
 
-        fp = StringIO()
-        obs_root.write(fp)
-
-        self.assertEqual(fp.getvalue().strip(), exp_str)
+        self.assertEqual(str(obs_root).strip(), exp_str)
         self.assertNotIn(None, lookup)
 
     def test_make_consensus_tree_withtips(self):
@@ -384,10 +381,7 @@ class NLevelTests(TestCase):
         obs_root, lookup = make_consensus_tree(
             data, check_for_rank=False, tips=input_ids)
 
-        fp = StringIO()
-        obs_root.write(fp)
-
-        self.assertEqual(fp.getvalue().strip(), exp_str)
+        self.assertEqual(str(obs_root).strip(), exp_str)
         self.assertNotIn(None, lookup)
 
     def test_decorate_ntips(self):
@@ -507,10 +501,7 @@ class NLevelTests(TestCase):
         backfill_names_gap(t, lookup)
         commonname_promotion(t)
 
-        fp = StringIO()
-        t.write(fp)
-
-        self.assertEqual(fp.getvalue().strip(), exp)
+        self.assertEqual(str(t).rstrip(), exp)
 
 if __name__ == '__main__':
     main()

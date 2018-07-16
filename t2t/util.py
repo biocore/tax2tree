@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from skbio import parse_fasta
+from skbio.io import read
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -14,8 +14,8 @@ __status__ = "Development"
 
 def combine_alignments(fp1, fp2):
     """take two filepointers, combine the files"""
-    seqs1 = dict(parse_fasta(fp1))
-    seqs2 = dict(parse_fasta(fp2))
+    seqs1 = {seq.metadata['id']: str(seq) for seq in read(fp1, format='fasta')}
+    seqs2 = {seq.metadata['id']: str(seq) for seq in read(fp2, format='fasta')}
 
     if set(seqs1).intersection(set(seqs2)):
         raise ValueError("Conflicting sequence ids in fp1 and fp2")

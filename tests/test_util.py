@@ -23,15 +23,15 @@ class UtilTests(TestCase):
 
     def test_combine_alignments(self):
         """Combine alignments, raise if intersecting ids"""
-        lines1 = ['>a', 'AATTGGCC', '>b', 'AATTAATT']
-        lines2 = ['>c', 'AATTAGCC', '>d', 'AATTGATT']
+        lines1 = [u'>a\n', u'AATTGGCC\n', u'>b\n', u'AATTAATT\n']
+        lines2 = [u'>c\n', u'AATTAGCC\n', u'>d\n', u'AATTGATT\n']
         exp = {'a': 'AATTGGCC', 'b': 'AATTAATT',
                'c': 'AATTAGCC', 'd': 'AATTGATT'}
         obs = combine_alignments(lines1, lines2)
         self.assertEqual(obs, exp)
 
-        lines1 = ['>a', 'AATTGGCC', '>b', 'AATTAATT']
-        lines2 = ['>a', 'AATTAACC', '>C', 'AATTGATT']
+        lines1 = [u'>a\n', u'AATTGGCC\n', u'>b\n', u'AATTAATT\n']
+        lines2 = [u'>a\n', u'AATTAACC\n', u'>C\n', u'AATTGATT\n']
         self.assertRaises(ValueError, combine_alignments, lines1, lines2)
 
     def test_reroot(self):
@@ -47,11 +47,8 @@ class UtilTests(TestCase):
                "j:2.0):0.5);")
         exp = "((a,b)c,((d,e)f,(h,i)j));"
         obs = reroot(t, tips)
-        
-        fp = StringIO()
-        obs.write(fp)
-        
-        self.assertEqual(fp.getvalue().strip(), exp)
+
+        self.assertEqual(str(obs).rstrip(), exp)
 
     def test_unzip(self):
         """unzip(items) should be the inverse of zip(*items)"""
