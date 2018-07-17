@@ -563,7 +563,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     god_node = TreeNode(name=None)
     god_node.Rank = None
 
-    base = cons_split[0]
+    base = next(iter(cons_split))
     cur_node = god_node
 
     # create a base path in the tree
