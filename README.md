@@ -16,4 +16,3 @@ run the following to reproduce the output seen in Figure 1 in
 Contact information
 -------------------
 Daniel McDonald (mcdonadt@colorado.edu)
-
