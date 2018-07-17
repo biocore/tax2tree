@@ -1,7 +1,7 @@
 # Modified from https://github.com/biocore/biom-format/
 language: python
 env:
-  - PYTHON_VERSION=2.7 NUMPY_VERSION=1.7
+  - PYTHON_VERSION=2.7
 before_install:
   - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
   - export MINICONDA_PREFIX="$HOME/miniconda"
@@ -12,9 +12,9 @@ before_install:
   - conda update -q conda
   - conda info -a
 install:
-  - conda create --yes -n env_name python=$PYTHON_VERSION pip numpy=$NUMPY_VERSION scipy matplotlib nose pep8 Sphinx
+  - conda create --yes -n env_name python=$PYTHON_VERSION pip numpy scipy matplotlib nose pep8 Sphinx
   - source activate env_name
-  - pip install future==0.13.1 coveralls natsort pyflakes flake8 python-dateutil scikit-bio==0.4.2 click
+  - pip install future coveralls natsort pyflakes flake8 python-dateutil scikit-bio==0.4.2 click
   - pip install -e . --no-deps
 script:
   - if [ ${WITH_DOCTEST} ]; then PYTHONWARNINGS=ignore nosetests --with-doctest --with-coverage -I DONOTIGNOREANYTHING; else PYTHONWARNINGS=ignore nosetests --with-coverage -I DONOTIGNOREANYTHING; fi
