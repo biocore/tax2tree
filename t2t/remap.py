@@ -35,6 +35,6 @@ def remap_taxonomy(mapping, taxa):
 
         for m in mapping[rep]:
             if m in res:
-                print "%s was: %s\nnow is %s" % (m, mapping[m], tax_str)
+                print("%s was: %s\nnow is %s" % (m, mapping[m], tax_str))
             res[m] = tax_str
     return res

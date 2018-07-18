@@ -28,6 +28,7 @@ from t2t.nlevel import (load_consensus_map, collect_names_at_ranks_counts,
                         validate_all_paths, score_tree)
 
 from skbio import TreeNode
+from StringIO import StringIO
 
 class NLevelTests(TestCase):
 
@@ -38,8 +39,8 @@ class NLevelTests(TestCase):
         """Determine's the tree's fmeasure score"""
         # set RankNames and RankNameScores
         # if name in RankNames, check score, look at tips, etc
-        t_str = "(((a,b),(c,d))e,(f,g),h)i;"
-        t = TreeNode.from_newick(t_str)
+        t_str = StringIO(u"(((a,b),(c,d))e,(f,g),h)i;")
+        t = TreeNode.read(t_str)
         t.RankNames = ['i', None, None, None]  # 1.0 * 6
         t.RankNameScores = [1.0, None, None, None]
         t.children[0].RankNames = [None, 'e', 'foo', None]  # 0.5 * 3, 0.6 * 3
@@ -63,14 +64,14 @@ class NLevelTests(TestCase):
 
     def test_has_badname(self):
         """correctly determines if a string is bad"""
-        input = "assadasd environmental sample asdasdd"
-        self.assertTrue(has_badname(input))
-        input = "asdasdsad dsasda dasd as"
-        self.assertFalse(has_badname(input))
+        data = "assadasd environmental sample asdasdd"
+        self.assertTrue(has_badname(data))
+        data = "asdasdsad dsasda dasd as"
+        self.assertFalse(has_badname(data))
 
     def test_load_consensus_map(self):
         """correctly returns a consensus map"""
-        input = ["foo\ta; b; c; d; e; f; g",
+        data = ["foo\ta; b; c; d; e; f; g",
                  "bar\th; i; j; k; l; m; n",
                  "foobar\th; i; j; None; l; ; foo uncultured bar"]
         exp_noappend = {'foo': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
@@ -80,21 +81,21 @@ class NLevelTests(TestCase):
             'foo': ['d__a', 'p__b', 'c__c', 'o__d', 'f__e', 'g__f', 's__g'],
             'bar': ['d__h', 'p__i', 'c__j', 'o__k', 'f__l', 'g__m', 's__n'],
             'foobar': ['d__h', 'p__i', 'c__j', 'o__', 'f__l', 'g__', 's__']}
-        obs_noappend = load_consensus_map(input, False)
-        obs_append = load_consensus_map(input, True)
+        obs_noappend = load_consensus_map(data, False)
+        obs_append = load_consensus_map(data, True)
         self.assertEqual(obs_noappend, exp_noappend)
         self.assertEqual(obs_append, exp_append)
 
     def test_collect_names_at_ranks_counts(self):
         """correctly returns total counts for names at ranks"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
                        'b': ['1', '2', '3', None, '5', '6', '8'],
                        'd': ['1', '2', '3', 'a', '5', '6', '9'],
                        'e': ['1', '2', '3', None, '5', '6', '9'],
                        'i': ['1', '2', '3', 'a', '5', '6', '9'],
                        'j': ['1', '2', '3', '4', '5', '6', '9']}
-        tree = load_tree(input, tipname_map)
+        tree = load_tree(data, tipname_map)
 
         exp = {0: {'1': 6},
                1: {'2': 6},
@@ -109,7 +110,7 @@ class NLevelTests(TestCase):
 
     def test_load_tree(self):
         """correctly loads and decorates tiplook info on a tree"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
                        'b': ['1', '2', '3', '4', '5', '6', '8'],
                        'd': ['1', '2', '3', '4', '5', '6', '9'],
@@ -131,7 +132,7 @@ class NLevelTests(TestCase):
                'k': (5, 6, [None] * 7),
                'l': (0, 6, [None] * 7)}
 
-        obstree = load_tree(input, tipname_map)
+        obstree = load_tree(data, tipname_map)
         obs = {}
         for node in obstree.traverse(include_self=True):
             obs[node.name] = (node.TipStart, node.TipStop, node.Consensus)
@@ -140,7 +141,7 @@ class NLevelTests(TestCase):
 
     def test_decorate_name_relative_freqs(self):
         """correctly decorate relative frequency information on a tree"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
                        'b': ['1', '2', '3', '4', '5', '6', '8'],
                        'd': ['1', '2', '3', '4', '5', '6', '8'],
@@ -156,7 +157,7 @@ class NLevelTests(TestCase):
                         5: {'6': 6},
                         6: {'7': 3, '8': 3}}
 
-        tree = load_tree(input, tipname_map)
+        tree = load_tree(data, tipname_map)
         decorate_ntips(tree)
         decorate_name_relative_freqs(tree, total_counts, 1)
 
@@ -172,7 +173,7 @@ class NLevelTests(TestCase):
 
     def test_decorate_name_counts(self):
         """correctly decorate relative frequency information on a tree"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
                        'b': ['1', '2', '3', '4', '5', '6', '8'],
                        'd': ['1', '2', '3', '4', '5', '6', '8'],
@@ -180,7 +181,7 @@ class NLevelTests(TestCase):
                        'i': ['1', '2', '3', '4', 'a', None, '7'],
                        'j': ['1', '2', '3', '4', 'a', None, '8']}
 
-        tree = load_tree(input, tipname_map)
+        tree = load_tree(data, tipname_map)
         decorate_ntips(tree)
         decorate_name_counts(tree)
 
@@ -196,7 +197,7 @@ class NLevelTests(TestCase):
 
     def test_set_ranksafe(self):
         """correctly set ranksafe on tree"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
                        'b': ['1', '2', '3', 'b', '5', '6', '8'],
                        'd': ['1', '2', '3', '4', '5', '6', '8'],
@@ -212,7 +213,7 @@ class NLevelTests(TestCase):
                         5: {'6': 6},
                         6: {'7': 3, '8': 3}}
 
-        tree = load_tree(input, tipname_map)
+        tree = load_tree(data, tipname_map)
         decorate_ntips(tree)
         decorate_name_relative_freqs(tree, total_counts, 1)
         set_ranksafe(tree)
@@ -222,7 +223,7 @@ class NLevelTests(TestCase):
 
     def test_name_node_score_fold(self):
         """hate taxonomy"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '8'],
                        'b': ['1', '2', '3', '4', '5', '6', '8'],
                        'd': ['1', '2', '3', 'f', 'e', 'c', '9'],
@@ -238,7 +239,7 @@ class NLevelTests(TestCase):
                         5: {'6': 3, 'c': 3, 'd': 2, 'h': 3},
                         6: {'8': 3, '9': 2, '10': 2, '11': 2, '12': 2}}
 
-        tree = load_tree(input, tipname_map)
+        tree = load_tree(data, tipname_map)
         decorate_ntips(tree)
         decorate_name_relative_freqs(tree, total_counts, 1)
         set_ranksafe(tree)
@@ -258,15 +259,15 @@ class NLevelTests(TestCase):
 
     def test_validate_all_paths(self):
         """complains correctly about badpaths"""
-        input = "(((((1,2)s__,(3,4)s__)g__)p__),((5,6)f__)f__,((7,8)c__)o__);"
-        t = load_tree(input, {})
+        data = StringIO(u"(((((1,2)s__,(3,4)s__)g__)p__),((5,6)f__)f__,((7,8)c__)o__);")
+        t = load_tree(data, {})
         exp = [n for n in t.tips() if n.name in ['5', '6', '7', '8']]
         obs = validate_all_paths(t)
         self.assertEqual(obs, exp)
 
     def test_best_name_freqs_for_nodes(self):
         """correctly gets the frequencies per name per node"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
                        'b': ['1', '2', '3', 'b', '5', '6', '8'],
                        'd': ['1', '2', '3', '4', '5', '6', '7'],
@@ -282,13 +283,13 @@ class NLevelTests(TestCase):
                         5: {'6': 3, 'foo': 3},
                         6: {'7': 3, '8': 4}}
 
-        tree = load_tree(input, tipname_map)
+        tree = load_tree(data, tipname_map)
         decorate_ntips(tree)
         decorate_name_relative_freqs(tree, total_counts, 1)
         set_ranksafe(tree)
         pick_names(tree)
 
-        #result = best_name_freqs_for_nodes(tree)
+        # result = best_name_freqs_for_nodes(tree)
         cnode = tree.children[0]
         hnode = tree.children[1]
         knode = tree.children[2]
@@ -300,7 +301,7 @@ class NLevelTests(TestCase):
 
     def test_pick_names(self):
         """correctly pick names to retain on a tree"""
-        input = "((a,b)c,(d,(e,f)g)h,(i,j)k)l;"
+        data = StringIO(u"((a,b)c,(d,(e,f)g)h,(i,j)k)l;")
         tipname_map = {'a': ['1', '2', '3', '4', '5', '6', '7'],
                        'b': ['1', '2', '3', 'b', '5', '6', '8'],
                        'd': ['1', '2', '3', '4', '5', '6', '7'],
@@ -316,7 +317,7 @@ class NLevelTests(TestCase):
                         5: {'6': 3, 'foo': 3},
                         6: {'7': 3, '8': 4}}
 
-        tree = load_tree(input, tipname_map)
+        tree = load_tree(data, tipname_map)
         decorate_ntips(tree)
         decorate_name_relative_freqs(tree, total_counts, 1)
         set_ranksafe(tree)
@@ -336,12 +337,12 @@ class NLevelTests(TestCase):
 
     def test_walk_consensus_tree(self):
         """correctly walk consensus tree"""
-        input = [['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+        data = [['a', 'b', 'c', 'd', 'e', 'f', 'g'],
                  ['a', 'b', 'c', None, None, 'x', 'y'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'n'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'q'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'n']]
-        root, lookup = make_consensus_tree(input, check_for_rank=False)
+        _, lookup = make_consensus_tree(data, check_for_rank=False)
         exp1 = ['n', 'm', 'l']
         exp2 = ['a']
         exp3 = ['x', 'f__', 'o__', 'c']
@@ -354,21 +355,21 @@ class NLevelTests(TestCase):
 
     def test_make_consensus_tree(self):
         """correctly gets parent consensus counts"""
-        input = [['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+        data = [['a', 'b', 'c', 'd', 'e', 'f', 'g'],
                  ['a', 'b', 'c', None, None, 'x', 'y'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'n'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'q'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'n']]
         exp_str = "(((((((g)f)e)d,(((y)x)))c)b)a,((((((n,q)m)l)k)j)i)h);"
 
-        obs_root, lookup = make_consensus_tree(input, check_for_rank=False)
+        obs_root, lookup = make_consensus_tree(data, check_for_rank=False)
 
-        self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
+        self.assertEqual(str(obs_root).strip(), exp_str)
         self.assertNotIn(None, lookup)
 
     def test_make_consensus_tree_withtips(self):
         """correctly constructs the taxonomy tree with tip info"""
-        input = [['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+        data = [['a', 'b', 'c', 'd', 'e', 'f', 'g'],
                  ['a', 'b', 'c', None, None, 'x', 'y'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'n'],
                  ['h', 'i', 'j', 'k', 'l', 'm', 'q'],
@@ -378,14 +379,15 @@ class NLevelTests(TestCase):
                    "(4)q)m)l)k)j)i)h);")
 
         obs_root, lookup = make_consensus_tree(
-            input, check_for_rank=False, tips=input_ids)
-        self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
+            data, check_for_rank=False, tips=input_ids)
+
+        self.assertEqual(str(obs_root).strip(), exp_str)
         self.assertNotIn(None, lookup)
 
     def test_decorate_ntips(self):
         """correctly decorate the tree with the NumTips param"""
-        input = "(((a,b)c,(d,e,f)g)h,(i,j)k)l;"
-        tree = TreeNode.from_newick(input)
+        data = StringIO(u"(((a,b)c,(d,e,f)g)h,(i,j)k)l;")
+        tree = TreeNode.read(data)
         tips = dict([(tip.name, tip) for tip in tree.tips()])
         tips['a'].Consensus = [1, 2, 3, 4, 5, 6, 7]
         tips['b'].Consensus = [None, None, None, 5, None, None, None]
@@ -403,8 +405,8 @@ class NLevelTests(TestCase):
 
     def test_decorate_ntips_rank(self):
         """correctly decorate the tree with the NumTipsRank param"""
-        input = "(((a,b)c,(d,e,f)g)h,(i,j)k)l;"
-        tree = TreeNode.from_newick(input)
+        data = StringIO(u"(((a,b)c,(d,e,f)g)h,(i,j)k)l;")
+        tree = TreeNode.read(data)
         tips = dict([(tip.name, tip) for tip in tree.tips()])
         tips['a'].Consensus = [1, 2, 3, 4, 5, 6, 7]
         tips['b'].Consensus = [None, None, None, 5, None, None, None]
@@ -425,8 +427,8 @@ class NLevelTests(TestCase):
 
     def test_get_nearest_named_ancestor(self):
         """correctly get the nearest named ancestor"""
-        t = TreeNode.from_newick("(((s1,s2)g1,s3))root;")
-        t2 = TreeNode.from_newick("(((s1,s2)g1,s3));")
+        t = TreeNode.read(StringIO(u"(((s1,s2)g1,s3))root;"))
+        t2 = TreeNode.read(StringIO(u"(((s1,s2)g1,s3));"))
         exp_t = t
         exp_t2 = None
         obs_t = get_nearest_named_ancestor(t.find('s3'))
@@ -436,16 +438,15 @@ class NLevelTests(TestCase):
 
     def test_backfill_names_gap(self):
         """correctly backfill names"""
-        consensus_tree = TreeNode.from_newick(
-            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.read(StringIO(u"(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;"))
         rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'k': 0}
         for n in consensus_tree.traverse(include_self=True):
             n.Rank = rank_lookup[n.name[0]]
-        input = "((((1)s1,(2)s2),((3)s3,(4)s5)))o1;"
+        data = StringIO(u"((((1)s1,(2)s2),((3)s3,(4)s5)))o1;")
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
-        #exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
-        t = TreeNode.from_newick(input)
+        # exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
+        t = TreeNode.read(data)
         t.Rank = 3
         t.children[0].Rank = None
         t.children[0].children[0].Rank = None
@@ -472,25 +473,23 @@ class NLevelTests(TestCase):
 
     def test_backfill_names_dangling(self):
         """correctly fill in dangling missing ranks"""
-        consensus_tree = TreeNode.from_newick(
-            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
-        input = "((((1),(2)),((3),(4))))'o1; f1';"
+        consensus_tree = TreeNode.read(StringIO(u"(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;"))
+        data = "((((1),(2)),((3),(4))))'o1; f1';"
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
-        #exp = "((((1),(2)),((3),(4))))'o1; f1';"
+        # exp = "((((1),(2)),((3),(4))))'o1; f1';"
 
     def test_commonname_promotion(self):
         """correctly promote names if possible"""
-        consensus_tree = TreeNode.from_newick(
-            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.read(StringIO(u"(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;"))
         rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'k': 0}
         for n in consensus_tree.traverse(include_self=True):
             n.Rank = rank_lookup[n.name[0]]
-        input = "((((1)s1,(2)s2),((3)s3,(4)s5)))o1;"
+        data = StringIO(u"((((1)s1,(2)s2),((3)s3,(4)s5)))o1;")
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
         exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1';"
-        t = TreeNode.from_newick(input)
+        t = TreeNode.read(data)
         t.Rank = 3
         t.children[0].Rank = None
         t.children[0].children[0].Rank = None
@@ -501,7 +500,8 @@ class NLevelTests(TestCase):
         t.children[0].children[1].children[1].Rank = 6
         backfill_names_gap(t, lookup)
         commonname_promotion(t)
-        self.assertEqual(t.to_newick(with_distances=False), exp)
+
+        self.assertEqual(str(t).rstrip(), exp)
 
 if __name__ == '__main__':
     main()

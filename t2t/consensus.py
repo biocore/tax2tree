@@ -7,7 +7,7 @@ make_consensus_tree
 etc...
 """
 from nlevel import RANK_ORDER
-from numpy import zeros, where, logical_or
+from numpy import zeros, where, logical_or, long
 
 
 def taxa_score(master, reps):
@@ -111,8 +111,9 @@ def get_consensus_stats(consensus_map):
     rank_names = [c[0] for c in cons[0]]
     for idx, rank in enumerate(rank_names):
         # collect all cons that are classified (ie more info than k__)
-        klassed = [c[idx].lower() for c in cons if c[idx]
-                   and c[idx][0] == rank]
+        klassed = [c[idx].lower()
+                   for c
+                   in cons if c[idx] and c[idx][0] == rank]
 
         n_classified = len(klassed)
 
@@ -126,7 +127,7 @@ def get_consensus_stats(consensus_map):
 
 def pretty_print_consensus_stats(stats):
     seqs, names = stats
-    print '\t'.join(['rank', 'num_classified', 'num_unclassified',
-                     'num_names'])
+    print('\t'.join(['rank', 'num_classified', 'num_unclassified',
+                     'num_names']))
     for k in RANK_ORDER:
-        print '\t'.join(map(str, [k, seqs[k][0], seqs[k][1], len(names[k])]))
+        print('\t'.join(map(str, [k, seqs[k][0], seqs[k][1], len(names[k])])))
