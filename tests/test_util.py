@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from unittest import TestCase, main
-from t2t.util import combine_alignments, reroot, unzip
+from t2t.util import reroot, unzip
 from skbio import TreeNode
 
 __author__ = "Daniel McDonald"
@@ -18,19 +18,6 @@ class UtilTests(TestCase):
 
     def setUp(self):
         pass
-
-    def test_combine_alignments(self):
-        """Combine alignments, raise if intersecting ids"""
-        lines1 = ['>a', 'AATTGGCC', '>b', 'AATTAATT']
-        lines2 = ['>c', 'AATTAGCC', '>d', 'AATTGATT']
-        exp = {'a': 'AATTGGCC', 'b': 'AATTAATT',
-               'c': 'AATTAGCC', 'd': 'AATTGATT'}
-        obs = combine_alignments(lines1, lines2)
-        self.assertEqual(obs, exp)
-
-        lines1 = ['>a', 'AATTGGCC', '>b', 'AATTAATT']
-        lines2 = ['>a', 'AATTAACC', '>C', 'AATTGATT']
-        self.assertRaises(ValueError, combine_alignments, lines1, lines2)
 
     def test_reroot(self):
         """Should correctly reroot a tree"""

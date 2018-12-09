@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
-from string import lower
 from operator import itemgetter
 from numpy import argmin, array, where
 from skbio import TreeNode
@@ -23,7 +22,7 @@ BAD_NAMES = [
     'environmental sample', 'uncultured', 'UNNAMEABLE', 'unclassified',
     'unidentified', 'cluster', 'isolate', 'environmental samples']
 
-BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(lower, BAD_NAMES)))
+BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(str.lower, BAD_NAMES)))
 
 
 def set_rank_order(order):
@@ -66,7 +65,7 @@ def load_consensus_map(lines, append_rank, check_bad=True,
     a list.
     """
     if verbose:
-        print "loading consensus map..."
+        print("loading consensus map...")
 
     mapping = {}
     n_ranks = len(RANK_ORDER)
@@ -446,7 +445,7 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
     to avoid horrible lookups in the tree
     """
     if verbose:
-        print "Starting name_node_score_fold..."
+        print("Starting name_node_score_fold...")
     name_node_score = {i: {} for i in range(len(RANK_ORDER))}
     n_ranks = len(RANK_ORDER)
 
@@ -521,7 +520,7 @@ def score_tree(tree, verbose=False):
     tip_count = 0
 
     if verbose:
-        print "Scoring tree..."
+        print("Scoring tree...")
 
     for n in tree.non_tips(include_self=True):
         for idx, name in enumerate(n.RankNames):
@@ -657,18 +656,18 @@ def backfill_names_gap(tree, consensus_lookup, verbose=False):
 
         if named_ancestor is None:
             if verbose:
-                print "Unable to find a named parent for %s" % (node.name)
+                print("Unable to find a named parent for %s" % (node.name))
             continue
 
         levels = node.Rank - named_ancestor.Rank
 
         # this is indicative of a problem with the consensus strings
         if levels < 0:
-            print node.name, node.Rank, named_ancestor.Rank
-            print '\t', node.RankSafe
-            print '\t', node.RankNames
-            print '\t', named_ancestor.RankSafe
-            print '\t', named_ancestor.RankNames
+            print(node.name, node.Rank, named_ancestor.Rank)
+            print('\t', node.RankSafe)
+            print('\t', node.RankNames)
+            print('\t', named_ancestor.RankSafe)
+            print('\t', named_ancestor.RankNames)
             node.BackFillNames = []
             continue
         elif levels == 1:
@@ -695,11 +694,11 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
 
         if curr is None:
             if verbose:
-                print "Possible malformed consensus tree! See node %s" % name
+                print("Possible malformed consensus tree! See node %s" % name)
             continue
         if curr.name is None:
             if verbose:
-                print "Gap in consensus tree! See node %s" % name
+                print("Gap in consensus tree! See node %s" % name)
             names.append('%s__' % RANK_ORDER[curr.Rank])
         else:
             names.append(curr.name)
@@ -782,7 +781,7 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
     expects .BackFillNames to be set
     """
     if verbose:
-        print "Assigning unique tags to duplicate names..."
+        print("Assigning unique tags to duplicate names...")
 
     # build up a dict of the names and how many tips descend
     name_lookup = {}
@@ -824,7 +823,7 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
     assumes .name is set
     """
     if verbose:
-        print "Pulling consensus strings..."
+        print("Pulling consensus strings...")
 
     constrings = []
     rank_order_rev = {r: i for i, r in enumerate(RANK_ORDER)}
@@ -870,7 +869,7 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
 def save_bootstraps(tree, verbose=False):
     """Retains .Bootstrap if set in .name"""
     if verbose:
-        print "Attempting to retain bootstrap values"
+        print("Attempting to retain bootstrap values")
     for n in tree.non_tips(include_self=True):
         if n.Bootstrap is not None:
             if n.name is None:
@@ -884,13 +883,13 @@ def save_bootstraps(tree, verbose=False):
 
 def getpath(foo):
     while foo.parent:
-        print foo.name
+        print(foo.name)
         if hasattr(foo, 'RankNames'):
-            print foo.RankNames
+            print(foo.RankNames)
         foo = foo.parent
-    print foo.name
+    print(foo.name)
     if hasattr(foo, 'RankNames'):
-        print foo.RankNames
+        print(foo.RankNames)
 
 
 def is_float(s):

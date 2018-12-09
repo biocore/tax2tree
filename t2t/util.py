@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from skbio import parse_fasta
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -10,20 +9,6 @@ __version__ = "1.0"
 __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
-
-
-def combine_alignments(fp1, fp2):
-    """take two filepointers, combine the files"""
-    seqs1 = dict(parse_fasta(fp1))
-    seqs2 = dict(parse_fasta(fp2))
-
-    if set(seqs1).intersection(set(seqs2)):
-        raise ValueError("Conflicting sequence ids in fp1 and fp2")
-
-    combined = seqs1
-    combined.update(seqs2)
-
-    return combined
 
 
 def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):

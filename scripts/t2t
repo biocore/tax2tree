@@ -116,7 +116,7 @@ def fetch(tree, output):
     """Fetch the taxonomy off the tree"""
     result, error = t2tcli.fetch(tree)
     if error:
-        print '\n'.join(result)
+        print('\n'.join(result))
     else:
         output.write('\n'.join(result))
 
@@ -132,7 +132,7 @@ def validate(taxonomy, limit, flat_errors, hierarchy_errors):
     lines = taxonomy.readlines()
     result, err = t2t.cli.validate(lines, limit, flat_errors, hierarchy_errors)
 
-    print '\n'.join(result)
+    print('\n'.join(result))
 
 @cli.command()
 @click.option('--consensus-map', '-m', required=True,
@@ -146,11 +146,11 @@ def consistency(tree, consensus_map, output_file, rooted, quiet):
     """Consistency of a tree relative to taxonomy"""
     
     if not quiet:
-        print 'Determining taxonomic consistency of: '
-        print '  tree = ' + tree.name
-        print '  consensus-map = ' + consensus_map.name
-        print '  rooted = ' + str(rooted)
-        print ''
+        print('Determining taxonomic consistency of: ')
+        print('  tree = ' + tree.name)
+        print('  consensus-map = ' + consensus_map.name)
+        print('  rooted = ' + str(rooted))
+        print('')
         
     # dynamically determine taxonomic ranks
     seed_con = consensus_map.readline().strip().split('\t')[1]
@@ -169,7 +169,7 @@ def consistency(tree, consensus_map, output_file, rooted, quiet):
     c.write(output_file, consistency_index)
     
     if not quiet:
-        print 'Consistency written to: ' + output_file
+        print('Consistency written to: ' + output_file)
 
 
 if __name__ == '__main__':
