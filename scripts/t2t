@@ -63,7 +63,7 @@ def decorate(tree, consensus_map, output):
 
     nl.save_bootstraps(tree_)
     f = open(output, 'w')
-    f.write(tree_.to_newick(with_distances=True))
+    f.write(str(tree_))
     f.close()
 
     f = open(output + '-fmeasures', 'w')
@@ -86,7 +86,7 @@ def reroot(tree, tips, output):
     tree_ = TreeNode.from_newick(tree)
     rerooted = ut.reroot(tree_, tipnames)
 
-    output.write(rerooted.to_newick(with_distances=True))
+    output.write(str(rerooted))
 
 
 @cli.command()

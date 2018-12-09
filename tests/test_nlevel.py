@@ -39,7 +39,7 @@ class NLevelTests(TestCase):
         # set RankNames and RankNameScores
         # if name in RankNames, check score, look at tips, etc
         t_str = "(((a,b),(c,d))e,(f,g),h)i;"
-        t = TreeNode.from_newick(t_str)
+        t = TreeNode.read([t_str])
         t.RankNames = ['i', None, None, None]  # 1.0 * 6
         t.RankNameScores = [1.0, None, None, None]
         t.children[0].RankNames = [None, 'e', 'foo', None]  # 0.5 * 3, 0.6 * 3
@@ -363,7 +363,7 @@ class NLevelTests(TestCase):
 
         obs_root, lookup = make_consensus_tree(input, check_for_rank=False)
 
-        self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
+        self.assertEqual(str(obs_root).strip(), exp_str)
         self.assertNotIn(None, lookup)
 
     def test_make_consensus_tree_withtips(self):
@@ -379,13 +379,13 @@ class NLevelTests(TestCase):
 
         obs_root, lookup = make_consensus_tree(
             input, check_for_rank=False, tips=input_ids)
-        self.assertEqual(obs_root.to_newick(with_distances=False), exp_str)
+        self.assertEqual(str(obs_root).strip(), exp_str)
         self.assertNotIn(None, lookup)
 
     def test_decorate_ntips(self):
         """correctly decorate the tree with the NumTips param"""
         input = "(((a,b)c,(d,e,f)g)h,(i,j)k)l;"
-        tree = TreeNode.from_newick(input)
+        tree = TreeNode.read([input])
         tips = dict([(tip.name, tip) for tip in tree.tips()])
         tips['a'].Consensus = [1, 2, 3, 4, 5, 6, 7]
         tips['b'].Consensus = [None, None, None, 5, None, None, None]
@@ -404,7 +404,7 @@ class NLevelTests(TestCase):
     def test_decorate_ntips_rank(self):
         """correctly decorate the tree with the NumTipsRank param"""
         input = "(((a,b)c,(d,e,f)g)h,(i,j)k)l;"
-        tree = TreeNode.from_newick(input)
+        tree = TreeNode.read([input])
         tips = dict([(tip.name, tip) for tip in tree.tips()])
         tips['a'].Consensus = [1, 2, 3, 4, 5, 6, 7]
         tips['b'].Consensus = [None, None, None, 5, None, None, None]
@@ -425,8 +425,8 @@ class NLevelTests(TestCase):
 
     def test_get_nearest_named_ancestor(self):
         """correctly get the nearest named ancestor"""
-        t = TreeNode.from_newick("(((s1,s2)g1,s3))root;")
-        t2 = TreeNode.from_newick("(((s1,s2)g1,s3));")
+        t = TreeNode.read(["(((s1,s2)g1,s3))root;"])
+        t2 = TreeNode.read(["(((s1,s2)g1,s3));"])
         exp_t = t
         exp_t2 = None
         obs_t = get_nearest_named_ancestor(t.find('s3'))
@@ -436,8 +436,8 @@ class NLevelTests(TestCase):
 
     def test_backfill_names_gap(self):
         """correctly backfill names"""
-        consensus_tree = TreeNode.from_newick(
-            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.read(
+            ["(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;"])
         rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'k': 0}
         for n in consensus_tree.traverse(include_self=True):
             n.Rank = rank_lookup[n.name[0]]
@@ -445,7 +445,7 @@ class NLevelTests(TestCase):
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
         #exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1'"
-        t = TreeNode.from_newick(input)
+        t = TreeNode.read([input])
         t.Rank = 3
         t.children[0].Rank = None
         t.children[0].children[0].Rank = None
@@ -472,8 +472,8 @@ class NLevelTests(TestCase):
 
     def test_backfill_names_dangling(self):
         """correctly fill in dangling missing ranks"""
-        consensus_tree = TreeNode.from_newick(
-            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.read([
+            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;"])
         input = "((((1),(2)),((3),(4))))'o1; f1';"
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
@@ -481,8 +481,8 @@ class NLevelTests(TestCase):
 
     def test_commonname_promotion(self):
         """correctly promote names if possible"""
-        consensus_tree = TreeNode.from_newick(
-            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;")
+        consensus_tree = TreeNode.read([
+            "(((s1,s2)g1,(s3,s4)g2,(s5,s6)g3)f1)o1;"])
         rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'k': 0}
         for n in consensus_tree.traverse(include_self=True):
             n.Rank = rank_lookup[n.name[0]]
@@ -490,7 +490,7 @@ class NLevelTests(TestCase):
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
         exp = "((((1)s1,(2)s2)g1,((3)'g2; s3',(4)'g3; s5')))'o1; f1';"
-        t = TreeNode.from_newick(input)
+        t = TreeNode.read([input])
         t.Rank = 3
         t.children[0].Rank = None
         t.children[0].children[0].Rank = None
@@ -501,7 +501,7 @@ class NLevelTests(TestCase):
         t.children[0].children[1].children[1].Rank = 6
         backfill_names_gap(t, lookup)
         commonname_promotion(t)
-        self.assertEqual(t.to_newick(with_distances=False), exp)
+        self.assertEqual(str(t).strip(), exp)
 
 if __name__ == '__main__':
     main()

@@ -6,6 +6,7 @@ from numpy import argmin, array, where
 from skbio import TreeNode
 from t2t.util import unzip
 import re
+import os
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -142,7 +143,10 @@ def load_tree(tree, tipname_map):
 
     """
     if not isinstance(tree, TreeNode):
-        tree = TreeNode.from_newick(tree)
+        if os.path.exists(tree):
+            tree = TreeNode.read(tree)
+        else:
+            tree = TreeNode.read([tree])
 
     n_ranks = len(RANK_ORDER)
 
@@ -251,8 +255,8 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
         res_valid = {i: {} for i in n_ranks_it}
 
         # collect frequency information of the names per rank
-        for rank, names in counts.iteritems():
-            for name, name_counts in counts[rank].iteritems():
+        for rank, names in counts.items():
+            for name, name_counts in counts[rank].items():
                 if name_counts < min_count:
                     continue
 
@@ -360,7 +364,7 @@ def decorate_ntips_rank(tree):
 
     for node in tree.postorder(include_self=True):
         counts = defaultdict(int)
-        for r in xrange(n_ranks):
+        for r in range(n_ranks):
             if node.is_tip():
                 counts[r] = node.Consensus[r] is not None
             else:
@@ -561,7 +565,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     god_node = TreeNode(name=None)
     god_node.Rank = None
 
-    base = cons_split[0]
+    base = list(cons_split)[0]
     cur_node = god_node
 
     # create a base path in the tree
@@ -797,7 +801,7 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
 
     # assign unique numbers based on the number of tips that descend
     for name, scores_and_nodes in name_lookup.items():
-        sorted_scores = sorted(scores_and_nodes)[::-1]
+        sorted_scores = sorted(scores_and_nodes, key=lambda x: x[0])[::-1]
         for count, (score, idx, node) in enumerate(sorted_scores):
             # only assign a number of we have more than 1
             if count > 0:
