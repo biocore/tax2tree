@@ -60,7 +60,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char):
     nl.decorate_name_relative_freqs(tree_, counts, 2)
     nl.set_ranksafe(tree_)
     nl.pick_names(tree_)
-    nl.name_node_score_fold(tree_)
+    scores = nl.name_node_score_fold(tree_)
 
     nl.set_preliminary_name_and_rank(tree_)
 
@@ -80,6 +80,12 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char):
     nl.save_bootstraps(tree_)
     tree_.write(output)
 
+    f = open(output + '-fmeasures', 'w')
+    f.write('#taxon\tscore\n')
+    for rank in scores:
+        for name, score in sorted(scores[rank])[::-1]:
+            f.write("%s\t%f\n" % (name, score))
+    f.close()
 
 @cli.command()
 @click.option('--tree', '-t', required=True, help='Input tree',
@@ -93,7 +99,7 @@ def reroot(tree, tips, output):
     tipnames = set([l.strip() for l in tips])
     tree_ = TreeNode.from_newick(tree)
     rerooted = ut.reroot(tree_, tipnames)
-    rerooted.write(output)
+    output.write(str(rerooted))
 
 
 @cli.command()
@@ -152,7 +158,6 @@ def validate(taxonomy, limit, flat_errors, hierarchy_errors):
 @click.option('--verbose', is_flag=True, default=False, help='Provide detailed output')
 def consistency(tree, consensus_map, output_file, rooted, verbose):
     """Consistency of a tree relative to taxonomy"""
-
     if verbose:
         click.echo('Determining taxonomic consistency of: ')
         click.echo('  tree = ' + tree.name)
@@ -175,7 +180,6 @@ def consistency(tree, consensus_map, output_file, rooted, verbose):
     c = con.Consistency(counts, len(nl.RANK_ORDER))
     consistency_index = c.calculate(tree, rooted)
     c.write(output_file, consistency_index)
-
     if verbose:
         click.echo('Consistency written to: ' + output_file)
 

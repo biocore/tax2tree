@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
-from string import lower
 from operator import itemgetter
 from numpy import argmin, array, where
 from skbio import TreeNode
 from t2t.util import unzip
 import re
+import os
+import io
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -23,7 +24,7 @@ BAD_NAMES = [
     'environmental sample', 'uncultured', 'UNNAMEABLE', 'unclassified',
     'unidentified', 'cluster', 'isolate', 'environmental samples']
 
-BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(lower, BAD_NAMES)))
+BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(str.lower, BAD_NAMES)))
 
 
 def set_rank_order(order):
@@ -256,8 +257,8 @@ def decorate_name_relative_freqs(tree, total_counts, min_count):
         res_valid = {i: {} for i in n_ranks_it}
 
         # collect frequency information of the names per rank
-        for rank, names in counts.iteritems():
-            for name, name_counts in counts[rank].iteritems():
+        for rank, names in counts.items():
+            for name, name_counts in counts[rank].items():
                 if name_counts < min_count:
                     continue
 
@@ -483,11 +484,16 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
             name_node_score[rank][name].append((node, score))
 
     # run through the built up dict and pick the best node for a name
+    used_scores = {}
     for rank, names in name_node_score.items():
+        used_scores[rank] = []
+
         for name, node_scores in names.items():
             node_scores_sorted = sorted(node_scores, key=itemgetter(1))[::-1]
             nodes, scores = unzip(node_scores_sorted)
             scores = array(scores)
+
+            used_scores[rank].append((name, scores[0]))
 
             # if there is a tie in scores...
             if sum(scores == scores[0]) > 1:
@@ -509,6 +515,7 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
                 for node, score in node_scores_sorted[1:]:
                     node.RankNames[rank] = None
 
+    return used_scores
 
 def score_tree(tree, verbose=False):
     """Scores the tree based on RankNameScores and tip coverage
@@ -564,7 +571,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     god_node = TreeNode(name=None)
     god_node.Rank = None
 
-    base = cons_split[0]
+    base = list(cons_split)[0]
     cur_node = god_node
 
     # create a base path in the tree
@@ -801,7 +808,7 @@ def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
 
     # assign unique numbers based on the number of tips that descend
     for name, scores_and_nodes in name_lookup.items():
-        sorted_scores = sorted(scores_and_nodes)[::-1]
+        sorted_scores = sorted(scores_and_nodes, key=lambda x: x[0])[::-1]
         for count, (score, idx, node) in enumerate(sorted_scores):
             # only assign a number of we have more than 1
             if count > 0:

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from skbio.io import read
-
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
 __credits__ = ["Daniel McDonald"]
@@ -10,20 +8,6 @@ __version__ = "1.0"
 __maintainer__ = "Daniel McDonald"
 __email__ = "mcdonadt@colorado.edu"
 __status__ = "Development"
-
-
-def combine_alignments(fp1, fp2):
-    """take two filepointers, combine the files"""
-    seqs1 = {seq.metadata['id']: str(seq) for seq in read(fp1, format='fasta')}
-    seqs2 = {seq.metadata['id']: str(seq) for seq in read(fp2, format='fasta')}
-
-    if set(seqs1).intersection(set(seqs2)):
-        raise ValueError("Conflicting sequence ids in fp1 and fp2")
-
-    combined = seqs1
-    combined.update(seqs2)
-
-    return combined
 
 
 def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
@@ -40,6 +24,8 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     if hasattr(new_node, 'length') and new_node.length:
         new_node.length = node.length / 2.0
         node.length = node.length / 2.0
+    else:
+        new_node.length = 0.0
 
     # add node back to tree and reconnect LCA
     parent.append(new_node)

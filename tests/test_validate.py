@@ -4,7 +4,12 @@ from unittest import TestCase, main
 
 from skbio import TreeNode
 
-from StringIO import StringIO
+import sys
+
+if sys.version_info[0] == 2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 from t2t.validate import (check_parse, check_n_levels, check_gap,
                           check_prefixes, ParseError, cache_tipnames,
