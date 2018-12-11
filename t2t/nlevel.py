@@ -7,6 +7,7 @@ from skbio import TreeNode
 from t2t.util import unzip
 import re
 import os
+import io
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -143,7 +144,7 @@ def load_tree(tree, tipname_map):
 
     """
     if not isinstance(tree, TreeNode):
-        if os.path.exists(tree):
+        if isinstance(tree, io.TextIOWrapper) or os.path.exists(tree):
             tree = TreeNode.read(tree)
         else:
             tree = TreeNode.read([tree])
