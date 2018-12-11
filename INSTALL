@@ -11,4 +11,3 @@ $ python setup.py install --prefix=$HOME
 and tax2tree will be placed into your path. To run, just call:
 
 $ t2t
-

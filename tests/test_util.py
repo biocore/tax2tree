@@ -4,6 +4,13 @@ from unittest import TestCase, main
 from t2t.util import reroot, unzip
 from skbio import TreeNode
 
+import sys
+
+if sys.version_info[0] == 2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
 __credits__ = ["Daniel McDonald"]
@@ -21,7 +28,7 @@ class UtilTests(TestCase):
 
     def test_reroot(self):
         """Should correctly reroot a tree"""
-        t = TreeNode.from_newick("(((a,b)c,(d,e)f)g,(h,i)j);")
+        t = TreeNode.read(StringIO(u"(((a,b)c,(d,e)f)g,(h,i)j);"))
         tips = ['a', 'b']
         for n in t.traverse():
             n.Length = 1.0
@@ -30,9 +37,10 @@ class UtilTests(TestCase):
         # off
         exp = ("((a:1.0,b:1.0)c:0.5,((d:1.0,e:1.0)f:1.0,(h:1.0,i:1.0)"
                "j:2.0):0.5);")
-        exp = "((a,b)c,((d,e)f,(h,i)j));"
+        exp = "((a,b)c,((d,e)f,(h,i)j):0.0);"
         obs = reroot(t, tips)
-        self.assertEqual(obs.to_newick(), exp)
+
+        self.assertEqual(str(obs).rstrip(), exp)
 
     def test_unzip(self):
         """unzip(items) should be the inverse of zip(*items)"""

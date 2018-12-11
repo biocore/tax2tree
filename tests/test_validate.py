@@ -4,6 +4,13 @@ from unittest import TestCase, main
 
 from skbio import TreeNode
 
+import sys
+
+if sys.version_info[0] == 2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
 from t2t.validate import (check_parse, check_n_levels, check_gap,
                           check_prefixes, ParseError, cache_tipnames,
                           get_polyphyletic, find_gap)
@@ -19,11 +26,17 @@ class VerifyTaxonomy(TestCase):
         obs = check_parse(good_string)
         self.assertEqual(obs, exp)
 
+        obs = check_parse(good_string_2)
+        self.assertEqual(obs, exp)
+
         self.assertRaises(ParseError, check_parse, bad_string)
 
     def test_check_n_levels(self):
         """requires N levels, or unclassified"""
         id_, parsed = check_parse(good_string)
+        self.assertTrue(check_n_levels(parsed, 7))
+
+        id_, parsed = check_parse(good_string_2)
         self.assertTrue(check_n_levels(parsed, 7))
 
         self.assertFalse(check_n_levels(parsed, 8))
@@ -46,6 +59,9 @@ class VerifyTaxonomy(TestCase):
     def test_check_gap(self):
         """check if a gap exists in a string"""
         id_, parsed = check_parse(good_string)
+        self.assertTrue(check_gap(parsed))
+
+        id_, parsed = check_parse(good_string_2)
         self.assertTrue(check_gap(parsed))
 
         id_, parsed = check_parse(good_trailing)
@@ -74,6 +90,9 @@ class VerifyTaxonomy(TestCase):
         id_, parsed = check_parse(good_string)
         self.assertTrue(check_prefixes(parsed, prefixes))
 
+        id_, parsed = check_parse(good_string_2)
+        self.assertTrue(check_prefixes(parsed, prefixes))
+
         id_, parsed = check_parse(bad_prefix)
         self.assertFalse(check_prefixes(parsed, prefixes))
 
@@ -82,7 +101,7 @@ class VerifyTaxonomy(TestCase):
 
     def test_cache_tipnames(self):
         """caches tipnames"""
-        t = TreeNode.from_newick("((a,b)c,(d,e)f)g;")
+        t = TreeNode.read(StringIO(u"((a,b)c,(d,e)f)g;"))
         cache_tipnames(t)
 
         self.assertEqual(t.tip_names, ['a', 'b', 'd', 'e'])
@@ -110,7 +129,8 @@ class VerifyTaxonomy(TestCase):
         self.assertEqual(sorted(obs_poly[('X2', 1)].keys()), ['K'])
         self.assertEqual(sorted(obs_poly[('K', 0)].keys()), [None])
 
-good_string = "1	k__a; p__b; c__c; o__d; f__e; g__f; s__g"
+good_string = "1\tk__a; p__b; c__c; o__d; f__e; g__f; s__g"
+good_string_2 = "1\tk__a;p__b;c__c;o__d;f__e;g__f;s__g"
 
 # space instead of tab
 bad_string = "2 k__a; p__b; c__c; o__d; f__e; g__f; s__g"

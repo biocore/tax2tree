@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
+
+from numpy import mean
+
 __author__ = "Donovan Park"
 __copyright__ = "Copyright 2014, The tax2tree project"
 __credits__ = ["Donovan Park"]
@@ -8,10 +12,6 @@ __version__ = "1.0"
 __maintainer__ = "Donovan Park"
 __email__ = "donovan.parks@gmail.com"
 __status__ = "Development"
-
-from collections import defaultdict
-
-from numpy import mean
 
 
 class Consistency(object):
@@ -50,13 +50,13 @@ class Consistency(object):
         # determine total number of informative tips in tree for each rank
         total_informative_tips = defaultdict(int)
         for n in tree.tips():
-            for rank in xrange(self.n_ranks):
+            for rank in range(self.n_ranks):
                 total_informative_tips[rank] += n.NumTipsRank[rank]
 
         # determine highest consistency node for each taxa
-        consistency_index = {i: defaultdict(int) for i in xrange(self.n_ranks)}
+        consistency_index = {i: defaultdict(int) for i in range(self.n_ranks)}
         for n in tree.traverse(include_self=True):
-            for rank in xrange(self.n_ranks):
+            for rank in range(self.n_ranks):
                 for name, total_taxa_cnt in self.taxa_counts[rank].iteritems():
                     node_taxa_count = n.TaxaCount[rank].get(name, 0)
                     incongruent_taxa = n.NumTipsRank[rank] - node_taxa_count
@@ -92,7 +92,7 @@ class Consistency(object):
 
         fout = open(output_file, 'w')
         fout.write('Taxon\tCount\tConsistency\n')
-        for rank in xrange(self.n_ranks):
+        for rank in range(self.n_ranks):
             for name, consistency in consistency_index[rank].iteritems():
                 fout.write('%s\t%d\t%.3f\n' % (name,
                                                self.taxa_counts[rank][name],
@@ -114,7 +114,7 @@ class Consistency(object):
 
         fout = open(output_file, 'w')
         fout.write('Rank #\tRank prefix\t# taxon\tAverage consistency\n')
-        for rank in xrange(self.n_ranks):
+        for rank in range(self.n_ranks):
             val = []
             for name, consistency in consistency_index[rank].iteritems():
                 if self.taxa_counts[rank][name] >= min_taxa:

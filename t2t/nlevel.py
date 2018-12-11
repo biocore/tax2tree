@@ -35,9 +35,11 @@ def set_rank_order(order):
 
 def determine_rank_order(con):
     """Determines dynamically rank order based on first input con string"""
-    order = [s[0] for s in con.split('; ')]
+    order = [s.strip()[0] for s in con.split(';')]
     global RANK_ORDER
     RANK_ORDER = order
+
+    return order
 
 
 def has_badname(name):
@@ -51,7 +53,7 @@ def load_consensus_map(lines, append_rank, check_bad=True,
     """Input is tab delimited mapping from tipname to a consensus string
 
     tipname is the tipnames in the loaded tree
-    consensus string must be len(RANK_ORDER), and '; ' delimited
+    consensus string must be len(RANK_ORDER), and ';' delimited
 
     check_bad : check for bad names
     check_min_inform: check for informative information below domain
@@ -73,8 +75,9 @@ def load_consensus_map(lines, append_rank, check_bad=True,
     n_ranks = len(RANK_ORDER)
     for line in lines:
         id_, consensus = line.strip().split('\t')
+        id_ = id_.strip()
 
-        names = names = [n.strip() for n in consensus.split(';')]
+        names = [n.strip() for n in consensus.split(';')]
 
         if check_euk_unc and 'Eukaryota' in names[0] or \
                 'Unclassified' in names[0]:
@@ -111,6 +114,7 @@ def load_consensus_map(lines, append_rank, check_bad=True,
                 else:
                     names[idx] = "%s__" % RANK_ORDER[idx]
         mapping[id_] = names
+
     return mapping
 
 
@@ -144,10 +148,7 @@ def load_tree(tree, tipname_map):
 
     """
     if not isinstance(tree, TreeNode):
-        if isinstance(tree, io.TextIOWrapper) or os.path.exists(tree):
-            tree = TreeNode.read(tree)
-        else:
-            tree = TreeNode.read([tree])
+        tree = TreeNode.read(tree, convert_underscores=False)
 
     n_ranks = len(RANK_ORDER)
 
@@ -449,8 +450,10 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
     for names and nodes, we can then pick the 'best' node out of the dict
     to avoid horrible lookups in the tree
     """
+
     if verbose:
         print("Starting name_node_score_fold...")
+
     name_node_score = {i: {} for i in range(len(RANK_ORDER))}
     n_ranks = len(RANK_ORDER)
 
@@ -542,6 +545,7 @@ def set_preliminary_name_and_rank(tree):
 
     This method is destructive: will destroy the Name attribute on tree
     """
+
     n_ranks = len(RANK_ORDER)
     empty_ranknames = [None] * n_ranks
 
@@ -563,6 +567,7 @@ def set_preliminary_name_and_rank(tree):
 
 def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     """Returns a mapping by rank for names to their parent names and counts"""
+
     god_node = TreeNode(name=None)
     god_node.Rank = None
 
@@ -692,7 +697,7 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
     names = [name]
     curr = node.parent
 
-    for i in range(1, levels):
+    for _ in range(1, levels):
         if curr.Rank is None:
             # at root...
             break
@@ -778,7 +783,8 @@ class TaxaName(object):
         return request
 
 
-def make_names_unique(tree, append_suffix=True, verbose=False):
+def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
+                      verbose=False):
     """Appends on a unique number if multiple of the same names exist
 
     ordered by number of tips, ie, _1 has more tips that _2
@@ -808,7 +814,7 @@ def make_names_unique(tree, append_suffix=True, verbose=False):
             if count > 0:
                 if node.BackFillNames[idx].split('__')[1] != '':
                     if append_suffix:
-                        unique_name = '_'.join(
+                        unique_name = suffix_glue_char.join(
                             [node.BackFillNames[idx], str(count)])
                         node.BackFillNames[idx] = unique_name
 
@@ -845,8 +851,8 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
         # walk up the tree filling in the consensus string
         while n.parent:
             if n.name:
-                if '; ' in n.name:
-                    names = n.name.split('; ')
+                if ';' in n.name:
+                    names = [r.strip() for r in n.name.split(';')]
                     for name in names:
                         rank_idx = rank_order_rev[name[0]]
                         consensus_string[rank_idx] = name
@@ -857,8 +863,8 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
 
         # if there is a name at the root we need to make sure we grab it
         if n.name:
-            if '; ' in n.name:
-                names = n.name.split('; ')
+            if ';' in n.name:
+                names = [r.strip() for r in n.name.split(';')]
                 for name in names:
                     rank_idx = rank_order_rev[name[0]]
                     consensus_string[rank_idx] = name
@@ -908,7 +914,7 @@ def is_float(s):
     try:
         float(s)
         return True
-    except:
+    except ValueError:
         return False
 
 
@@ -933,8 +939,8 @@ def validate_all_paths(tree):
 
         clean_path = []
         for p in path:
-            if '; ' in p:
-                clean_path.extend(p.split('; ')[::-1])
+            if ';' in p:
+                clean_path.extend(p.split(';')[::-1])
             else:
                 clean_path.append(p)
         return clean_path
