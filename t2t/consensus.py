@@ -112,7 +112,7 @@ def get_consensus_stats(consensus_map):
     for co in cons:
         if co is None:
             continue
-        rank_names = [c[:0] for c in co if c is not None]
+        rank_names = [c[0] for c in co if c is not None]
         break
     for idx, rank in enumerate(rank_names):
         # collect all cons that are classified (ie more info than k__)
