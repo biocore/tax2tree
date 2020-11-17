@@ -4,8 +4,8 @@
 def parse_otu_map(lines):
     """Returns {rep: [members]}, members include rep"""
     res = {}
-    for l in lines:
-        fields = l.strip().split('\t')
+    for line in lines:
+        fields = line.strip().split('\t')
         rep = fields[1]
         members = fields[1:]
         res[rep] = members

@@ -6,8 +6,6 @@ from numpy import argmin, array, where
 from skbio import TreeNode
 from t2t.util import unzip
 import re
-import os
-import io
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -516,6 +514,7 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
                     node.RankNames[rank] = None
 
     return used_scores
+
 
 def score_tree(tree, verbose=False):
     """Scores the tree based on RankNameScores and tip coverage
