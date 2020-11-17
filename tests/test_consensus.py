@@ -145,20 +145,20 @@ class ConsensusTests(TestCase):
             'c': [None, None, None, None, None, None, None],
             'd': ['k__k2', 'p__x', 'c__c1', 'o__o10', 'f__f2', 'g__g2',
                   's__s3']}
-        exp = array([map(hash, input['a']),
-                     map(hash, input['d']),
-                     map(hash, input['c']),
-                     map(hash, input['b'])])
+        exp = array([*map(hash, input['a']),
+                     *map(hash, input['d']),
+                     *map(hash, input['c']),
+                     *map(hash, input['b'])])
         obs = hash_cons(input, ['a', 'd', 'c', 'b'], 7)
-        self.assertTrue(array_equal(obs, exp))
+        self.assertTrue(array_equal(obs.flatten(), exp))
 
-        exp = array([map(hash, input['a']),
-                     map(hash, input['d']),
-                     [0, 0, 0, 0, 0, 0, 0],
-                     map(hash, input['c']),
-                     map(hash, input['b'])])
+        exp = array([*map(hash, input['a']),
+                     *map(hash, input['d']),
+                     *map(hash, [0, 0, 0, 0, 0, 0, 0]),
+                     *map(hash, input['c']),
+                     *map(hash, input['b'])])
         obs = hash_cons(input, ['a', 'd', 'e', 'c', 'b'], 7)
-        self.assertTrue(array_equal(obs, exp))
+        self.assertTrue(array_equal(obs.flatten(), exp))
 
     def test_get_consensus_stats(self):
         """Produces the correct stats"""
@@ -176,7 +176,7 @@ class ConsensusTests(TestCase):
                      'f': set(['f__f1', 'f__f2']), 'g': set(['g__g1',
                                                              'g__g2']),
                      's': set(['s__s1', 's__s2', 's__s3'])}
-        #exp_names = {'k':2,'p':1,'c':2,'o':1,'f':2,'g':2,'s':3}
+        exp_names = {'k':2,'p':1,'c':2,'o':1,'f':2,'g':2,'s':3}
         obs_nseqs, obs_names = get_consensus_stats(input)
         self.assertEqual(obs_nseqs, exp_nseqs)
         self.assertEqual(obs_names, exp_names)
