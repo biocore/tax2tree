@@ -176,7 +176,7 @@ class ConsensusTests(TestCase):
                      'f': set(['f__f1', 'f__f2']), 'g': set(['g__g1',
                                                              'g__g2']),
                      's': set(['s__s1', 's__s2', 's__s3'])}
-        exp_names = {'k':2,'p':1,'c':2,'o':1,'f':2,'g':2,'s':3}
+        #  exp_names = {'k':2,'p':1,'c':2,'o':1,'f':2,'g':2,'s':3}
         obs_nseqs, obs_names = get_consensus_stats(input)
         self.assertEqual(obs_nseqs, exp_nseqs)
         self.assertEqual(obs_names, exp_names)
