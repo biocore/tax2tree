@@ -6,8 +6,6 @@ from numpy import argmin, array, where
 from skbio import TreeNode
 from t2t.util import unzip
 import re
-import os
-import io
 
 __author__ = "Daniel McDonald"
 __copyright__ = "Copyright 2011, The tax2tree project"
@@ -517,6 +515,7 @@ def name_node_score_fold(tree, score_f=fmeasure, tiebreak_f=min_tips,
 
     return used_scores
 
+
 def score_tree(tree, verbose=False):
     """Scores the tree based on RankNameScores and tip coverage
 
@@ -572,6 +571,7 @@ def make_consensus_tree(cons_split, check_for_rank=True, tips=None):
     god_node.Rank = None
 
     base = list(cons_split)[0]
+    #  SMJ base = next(iter(cons_split))
     cur_node = god_node
 
     # create a base path in the tree

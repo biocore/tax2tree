@@ -4,8 +4,8 @@
 def parse_otu_map(lines):
     """Returns {rep: [members]}, members include rep"""
     res = {}
-    for l in lines:
-        fields = l.strip().split('\t')
+    for line in lines:
+        fields = line.strip().split('\t')
         rep = fields[1]
         members = fields[1:]
         res[rep] = members
@@ -15,7 +15,7 @@ def parse_otu_map(lines):
 def members_to_rep(otus):
     """Provides a lookup for a cluster member to its rep"""
     res = {}
-    for rep, members in otus.iteritems():
+    for rep, members in otus.items():
         for member in members:
             res[member] = rep
     return res
@@ -26,7 +26,7 @@ def remap_taxonomy(mapping, taxa):
     res = {}
     reps = members_to_rep(mapping)
 
-    for tax_id, tax_str in taxa.iteritems():
+    for tax_id, tax_str in taxa.items():
         rep = reps.get(tax_id, None)
 
         if rep is None:

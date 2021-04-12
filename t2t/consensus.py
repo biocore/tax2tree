@@ -6,7 +6,7 @@ load_consensus_map
 make_consensus_tree
 etc...
 """
-from nlevel import RANK_ORDER
+from t2t.nlevel import RANK_ORDER
 from numpy import zeros, where, logical_or, long
 
 
@@ -25,7 +25,7 @@ def taxa_score(master, reps):
     for rep in reps:
         n_reps += 1
 
-        for id_, con in rep.iteritems():
+        for id_, con in rep.items():
             if id_ not in master_ids:
                 raise KeyError("Unknown key %s in replicate" % id_)
 
@@ -49,7 +49,7 @@ def taxa_score(master, reps):
 
 def merge_taxa_strings_and_scores(master, scores):
     """Merge taxa strings and their scores, return {id_:(taxa,score)}"""
-    return {k: zip(v, scores[k]) for k, v in master.items()}
+    return {k: list(zip(v, scores[k])) for k, v in master.items()}
 
 
 def taxa_score_hash(master, reps):
@@ -108,7 +108,12 @@ def get_consensus_stats(consensus_map):
     cons = consensus_map.values()
     total_cons = len(cons)
 
-    rank_names = [c[0] for c in cons[0]]
+    rank_names = None
+    for co in cons:
+        if co is None:
+            continue
+        rank_names = [c[0] for c in co if c is not None]
+        break
     for idx, rank in enumerate(rank_names):
         # collect all cons that are classified (ie more info than k__)
         klassed = [c[idx].lower()
