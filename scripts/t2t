@@ -96,7 +96,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char):
               type=click.File('w'))
 def reroot(tree, tips, output):
     """Reroot a tree"""
-    tipnames = set([l.strip() for l in tips])
+    tipnames = [l.strip() for l in tips]
     tree_ = TreeNode.from_newick(tree)
     rerooted = ut.reroot(tree_, tipnames)
     output.write(str(rerooted))
