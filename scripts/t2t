@@ -42,8 +42,9 @@ def cli(ctx):
               help="Use a different char (instead of underscore) for " +
                    "polyphyletic group suffixes",
               required=False, default="_", type=str)
-
-def decorate(tree, consensus_map, output, no_suffix, suffix_char):
+@click.option('--min-count', default=2, type=int,
+              help="Minimum number of times a name needs to be represented")
+def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count):
     """Decorate a taxonomy onto a tree"""
     append_rank = False
 
@@ -57,7 +58,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char):
     counts = nl.collect_names_at_ranks_counts(tree_)
 
     nl.decorate_ntips(tree_)
-    nl.decorate_name_relative_freqs(tree_, counts, 2)
+    nl.decorate_name_relative_freqs(tree_, counts, min_count)
     nl.set_ranksafe(tree_)
     nl.pick_names(tree_)
     scores = nl.name_node_score_fold(tree_)
