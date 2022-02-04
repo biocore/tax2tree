@@ -18,7 +18,10 @@ classes = """
     Topic :: Scientific/Engineering
     Topic :: Scientific/Engineering :: Bio-Informatics
     Programming Language :: Python
-    Programming Language :: Python :: 2.7
+    Programming Language :: Python :: 3.6
+    Programming Language :: Python :: 3.7
+    Programming Language :: Python :: 3.8
+    Programming Language :: Python :: 3.9
     Operating System :: Unix
     Operating System :: POSIX
     Operating System :: MacOS :: MacOS X
@@ -41,7 +44,7 @@ if on_rtd:
     install_requires = []
 else:
     install_requires = ['numpy >= 1.7', 'future>=0.13.1', 'scikit-bio',
-                        'Click']
+                        'Click', 'iow']
 
 setup(name='tax2tree',
       version=__version__,
