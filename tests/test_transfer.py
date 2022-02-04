@@ -1,6 +1,6 @@
 import unittest
 import skbio
-from t2t.propagate import index_backbone, indexed_to_name
+from t2t.transfer import index_backbone, indexed_to_name
 
 
 class PropagateTests(unittest.TestCase):
