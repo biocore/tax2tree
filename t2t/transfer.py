@@ -1,5 +1,6 @@
 from functools import reduce
 from operator import or_
+import numpy as np
 
 
 def index_backbone(tree):
@@ -62,3 +63,81 @@ def indexed_to_name(tree):
                 raise KeyError("cannot construct unique mapping")
             mapping[node.covered_tips] = node.name
     return mapping
+
+
+def transfer(backbone, with_placement):
+    """Transfer names from a backbone to another tree
+
+    WARNING: operates inplace
+
+    Parameters
+    ----------
+    backbone : skbio.TreeNode
+        The backbone tree which we assume has useful names on it
+    with_placement : bp.BP
+        The tree derived from the backbone but which is much larger
+
+    Raises
+    ------
+    KeyError
+        If the backbone and placement tree appear inconsistent
+    """
+    index_backbone(backbone)
+    mapping = indexed_to_name(backbone)
+    backbone_names = frozenset({n.name for n in backbone.tips()})
+
+    tip_with_ranknames = {}  # TODO: pull rank data from tips if/where present
+    placement_backbone_positions = {}
+
+    placement_names = np.array([with_placement.name(i)
+                                for i in range(with_placement.B.size)])
+
+    # for each node in postorder
+    for i in range(with_placement.B.sum()):
+        node_idx = with_placement.postorderselect(i + 1)
+
+        # if we're a leaf, check if we have a backbone name, and index if so
+        if with_placement.isleaf(node_idx):
+            name = with_placement.name(node_idx)
+            if name in backbone_names:
+                placement_backbone_positions[node_idx] = [name, ]
+
+                # TODO: is our tip special?
+                if name in tip_with_ranknames:
+                    # deepest ancestor where this and only this tip is
+                    # represented, set rank names on that node
+                    raise ValueError()
+
+        # else we are not a leaf, check if we have backbone names,
+        # and see if we've found the correct node to set a name
+        else:
+            # gather names from immediate children if any
+            names = []
+            child = with_placement.fchild(node_idx)
+            while child != 0:
+                if child in placement_backbone_positions:
+                    names.extend(placement_backbone_positions[child]) # pop(child))
+                child = with_placement.nsibling(child)
+
+            if names:
+                placement_backbone_positions[node_idx] = names
+
+                # this is conservative: set the name as low as we can
+                names_as_set = frozenset(names)
+                if names_as_set in mapping:
+                    placement_names[node_idx] = mapping.pop(names_as_set)
+
+    if len(mapping) > 0:
+        problems = '\n'.join([str(k) + ':' + str(v)
+                              for k, v in mapping.items()])
+        raise KeyError(f"Inconsistency detected, not transfered: "
+                       f"{problems}")
+    with_placement.set_names(placement_names)
+    return with_placement
+
+    # separate:
+    # we need to account for species / genus names AT THE TIPS of the backbone
+    # which will occur for single entry names
+    # do a separate method, check for missing lower level names, place at tip
+
+

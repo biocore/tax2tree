@@ -1,6 +1,7 @@
 import unittest
 import skbio
-from t2t.transfer import index_backbone, indexed_to_name
+from t2t.transfer import index_backbone, indexed_to_name, transfer
+import bp
 
 
 class PropagateTests(unittest.TestCase):
@@ -12,11 +13,12 @@ class PropagateTests(unittest.TestCase):
     def test_transfer(self):
         b = skbio.TreeNode.read([self.backbone])
         wp = bp.parse_newick(self.with_placements)
-        res = transfer(b, wp)
-        res = bp.to_skbio_treenode(res)
+        transfer(b, wp)
+        res = bp.to_skbio_treenode(wp)
+
         self.assertEqual(res.find('a').parent.name, 'c')
         self.assertEqual(res.find('b').parent.parent.name, 'c')
-        self.assertEqual(res.find('X1').parent.name, 'c')
+        self.assertEqual(res.find('X1').parent.parent.name, 'c')
         self.assertEqual(res.find('d').parent.name, None)
         self.assertEqual(res.find('e').parent.name, None)
         self.assertEqual(res.find('g').parent.name, 'i')
