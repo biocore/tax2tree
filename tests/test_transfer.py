@@ -6,6 +6,29 @@ from t2t.transfer import index_backbone, indexed_to_name
 class PropagateTests(unittest.TestCase):
     def setUp(self):
         self.backbone = "((a,b)c,((d,e),(g,h)i)j)k;"
+        self.with_placements = "((a,(b,X1)),(((X2,d),e),(g,h),X3),X4)k;"
+        self.inconsistent = "((e,(b,X1)),(((X2,d),a),(g,h),X3),X4)k;"
+
+    def test_transfer(self):
+        b = skbio.TreeNode.read([self.backbone])
+        wp = bp.parse_newick(self.with_placements)
+        res = transfer(b, wp)
+        res = bp.to_skbio_treenode(res)
+        self.assertEqual(res.find('a').parent.name, 'c')
+        self.assertEqual(res.find('b').parent.parent.name, 'c')
+        self.assertEqual(res.find('X1').parent.name, 'c')
+        self.assertEqual(res.find('d').parent.name, None)
+        self.assertEqual(res.find('e').parent.name, None)
+        self.assertEqual(res.find('g').parent.name, 'i')
+        self.assertEqual(res.find('h').parent.name, 'i')
+        self.assertEqual(res.find('X3').parent.name, 'j')
+        self.assertEqual(res.find('X4').parent.name, 'k')
+
+    def test_transfer_inconsistent(self):
+        b = skbio.TreeNode.read([self.backbone])
+        wp = bp.parse_newick(self.inconsistent)
+        with self.assertRaises(KeyError):
+            transfer(b, wp)
 
     def test_index_backbone(self):
         t = skbio.TreeNode.read([self.backbone])
