@@ -28,12 +28,42 @@ def cli(ctx):
     pass
 
 
+def _add_nameholders(tree):
+    """Add single descendent nodes without length to hold names
+
+    Backbone trees may not have nodes allocated for representing lineage
+    names, particularly if the tree is constructed with single members
+    per lineage.
+
+    Tax2tree does not place lineage information on tips. As such, we miss out
+    on lineage data if there is a conflict in the parent of a tip as would 
+    occur with "(flexneri, coli)escherichia;". In this case, the tips 
+    "flexneri" and "coli" are where labels should go, but tax2tree needs 
+    the labels to the the actual identifiers.
+
+    So, instead, we had a node inbetween the tip and parent, which can hold 
+    tax information. Rather, we do "((X)flexneri, (Y)coli)escherichia);"
+    """
+    for n in list(tree.tips()):
+        new_node = skbio.TreeNode(length=0.0)
+        parent = n.parent
+        n.parent.remove(n)
+        n.parent = None
+        new_node.append(n)
+        parent.append(new_node)
+
+
 @cli.command()
 @click.option('--consensus-map', '-m', required=True,
               help='Input consensus map', type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Output basename')
-@click.option('--tree', '-t', required=True, help='Input tree',
+@click.option('--tree', '-t', required=False, 
+              help='Input tree, if specified, this tree will be used, this is '
+                   'mutually exclusive with --placement',
               type=click.File('U'))
+@click.option('--placement', '-p', required=False, 
+              help='Placement data, if specified, the tree will be sourced '
+                   'from the jplace data')
 @click.option('--no-suffix', '-n',
               help="Don't append suffixes (e.g. _1, _2) to polyphyletic " +
                    "groups",
@@ -44,8 +74,19 @@ def cli(ctx):
               required=False, default="_", type=str)
 @click.option('--min-count', default=2, type=int,
               help="Minimum number of times a name needs to be represented")
-def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count):
+def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
+             placement):
     """Decorate a taxonomy onto a tree"""
+    if tree is not None and placement is not None:
+        raise ValueError("Cannot specify --tree and --placement")
+    if tree is None and placement is None:
+        raise ValueError("Must specify --tree or --placement")
+
+    if placement:
+        placement = json.loads(open(placement).read())
+        tree = bp.parse_newick(placement['tree'])
+        _add_nameholders(tree)
+
     append_rank = False
 
     # get desired ranks from first line of consensus map
@@ -88,6 +129,17 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count):
             f.write("%s\t%f\n" % (name, score))
     f.close()
 
+    # replace the backbone tree with our decorated one
+    if placement:
+        tree_ = bp.from_skbio_treenode(tree_)
+        buf = StringIO()
+        bp.write_newick(tree_, buf, include_edge=True)
+        buf.seek(0)
+        placement['tree'] = buf.read()
+        with open(output + '.jplace', 'w') as fp:
+            fp.write(json.dumps(placement))
+
+
 @cli.command()
 @click.option('--tree', '-t', required=True, help='Input tree',
               type=click.File('U'))
@@ -95,12 +147,29 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count):
               type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Result',
               type=click.File('w'))
-def reroot(tree, tips, output):
+@click.option('--placement', '-p', required=False, 
+              help='Placement data, if specified, the tree will be sourced '
+                   'from the jplace data')
+def reroot(tree, tips, output, placement):
     """Reroot a tree"""
+    if tree is not None and placement is not None:
+        raise ValueError("Cannot specify --tree and --placement")
+    if tree is None and placement is None:
+        raise ValueError("Must specify --tree or --placement")
+
+    if placement:
+        placement = json.loads(open(placement).read())
+        tree_ = bp.parse_newick(placement['tree'])
+    else:
+        tree_ = TreeNode.read(tree)
+
     tipnames = [l.strip() for l in tips]
-    tree_ = TreeNode.read(tree)
     rerooted = ut.reroot(tree_, tipnames)
-    output.write(str(rerooted))
+
+    if placement:
+        pass
+    else:
+        output.write(str(rerooted))
 
 
 @cli.command()

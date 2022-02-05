@@ -132,6 +132,7 @@ def transfer(backbone, with_placement):
                               for k, v in mapping.items()])
         raise KeyError(f"Inconsistency detected, not transfered: "
                        f"{problems}")
+
     with_placement.set_names(placement_names)
     return with_placement
 
