@@ -3,6 +3,7 @@
 from unittest import TestCase, main
 from t2t.util import reroot, unzip
 from skbio import TreeNode
+import bp
 
 import sys
 
@@ -43,7 +44,7 @@ class UtilTests(TestCase):
         self.assertEqual(str(obs).rstrip(), exp)
 
     def test_reroot_edges(self):
-        t = TreeNode.read(StringIO(u"(((a,b)c,(d,e)f)g,(h,i)j);"))
+        t = bp.to_skbio_treenode(bp.parse_newick("(((a,b)c,(d,e)f)g,(h,i)j);"))
         tips = ['a', 'b']
         for n in t.traverse():
             n.Length = 1.0
