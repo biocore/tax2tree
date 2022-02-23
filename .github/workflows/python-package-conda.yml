@@ -15,19 +15,22 @@ jobs:
         auto-update-conda: true
         python-version: '3.8'
     - name: Install dependencies
-      run: bash -l {0}
+      shell: bash -l {0}
+      run: |
         conda create -y -n test-env python=3.8 pip click scikit-bio flake8 pytest
         conda activate test-env
         pip install iow
         pip install -e . --no-deps
     - name: Lint with flake8
-      run: bash -l {0}
+      shell: bash -l {0}
+      run: |
         conda activate test-env
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
-      run: bash -l {0}
+      shell: bash -l {0}
+      run: |
         conda activate test-env
         pytest
