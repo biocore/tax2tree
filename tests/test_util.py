@@ -3,6 +3,7 @@
 from unittest import TestCase, main
 from t2t.util import reroot, unzip
 from skbio import TreeNode
+import bp
 
 import sys
 
@@ -41,6 +42,21 @@ class UtilTests(TestCase):
         obs = reroot(t, tips)
 
         self.assertEqual(str(obs).rstrip(), exp)
+
+    def test_reroot_edges(self):
+        t = bp.to_skbio_treenode(bp.parse_newick("(((a,b)c,(d,e)f)g,(h,i)j);"))
+        tips = ['a', 'b']
+        for n in t.traverse():
+            n.Length = 1.0
+        t.find('a').edge_num = 1
+        t.find('b').edge_num = 2
+        t.find('c').edge_num = 3
+        t.find('f').edge_num = 4
+        obs = reroot(t, tips)
+        self.assertEqual(obs.find('a').edge_num, 1)
+        self.assertEqual(obs.find('b').edge_num, 2)
+        self.assertEqual(obs.find('c').edge_num, 3)
+        self.assertEqual(obs.find('f').edge_num, 4)
 
     def test_unzip(self):
         """unzip(items) should be the inverse of zip(*items)"""
