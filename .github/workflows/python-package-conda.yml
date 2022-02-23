@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       shell: bash -l {0}
       run: |
-        conda create -y -n test-env python=3.8 pip click scikit-bio flake8 pytest
+        conda create -y -n -c conda-forge test-env conda-forge::python=3.8 pip click scikit-bio flake8 pytest
         conda activate test-env
         pip install iow
         pip install -e . --no-deps
