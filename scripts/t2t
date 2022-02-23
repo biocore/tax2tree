@@ -2,6 +2,10 @@
 
 from skbio import TreeNode
 import click
+import json
+from io import StringIO
+
+import bp
 
 import t2t
 import t2t.nlevel as nl
@@ -16,6 +20,7 @@ def print_version(ctx, param, value):
         return
     click.echo('Version %s' % t2t.__version__)
     ctx.exit()
+
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -45,7 +50,7 @@ def _add_nameholders(tree):
     tax information. Rather, we do "((X)flexneri, (Y)coli)escherichia);"
     """
     for n in list(tree.tips()):
-        new_node = skbio.TreeNode(length=0.0)
+        new_node = TreeNode(length=0.0)
         parent = n.parent
         n.parent.remove(n)
         n.parent = None
@@ -84,7 +89,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
 
     if placement:
         placement = json.loads(open(placement).read())
-        tree = bp.parse_newick(placement['tree'])
+        tree = bp.to_skbio_treenode(bp.parse_newick(placement['tree']))
         _add_nameholders(tree)
 
     append_rank = False
@@ -141,7 +146,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
 
 
 @cli.command()
-@click.option('--tree', '-t', required=True, help='Input tree',
+@click.option('--tree', '-t', required=False, help='Input tree',
               type=click.File('U'))
 @click.option('--tips', '-n', required=True, help='Tip names',
               type=click.File('U'))
@@ -159,15 +164,27 @@ def reroot(tree, tips, output, placement):
 
     if placement:
         placement = json.loads(open(placement).read())
-        tree_ = bp.parse_newick(placement['tree'])
+        tree_ = bp.to_skbio_treenode(bp.parse_newick(placement['tree']))
     else:
-        tree_ = TreeNode.read(tree)
+        tree_ = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
 
     tipnames = [l.strip() for l in tips]
-    rerooted = ut.reroot(tree_, tipnames)
+
+    # based on discussion with siavash, find a small set of out-of-target 
+    # tips, root with them first, and then root with the target
+    tipnames_set = set(tipnames)
+    out_of_target = [n.name for n in tree_.tips() 
+                     if n.name not in tipnames_set][:10]
+    rerooted_1 = ut.reroot(tree_, out_of_target)
+    rerooted = ut.reroot(rerooted_1, tipnames)
 
     if placement:
-        pass
+        rerooted = bp.from_skbio_treenode(rerooted)                                
+        buf = StringIO()                                                           
+        bp.write_newick(rerooted, buf, True)                                       
+        buf.seek(0)                                                                
+        placement['tree'] = buf.read()                                             
+        output.write(json.dumps(placement))
     else:
         output.write(str(rerooted))
 
