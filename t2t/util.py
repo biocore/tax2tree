@@ -116,7 +116,7 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     new_node.append(node)
 
     # monkey patch? before we root
-    #_convert_to_local_treenode(tree)
+    _convert_to_local_treenode(tree)
     _edge_label(tree)
 
     # root at the new node, unset its temporary name
@@ -129,7 +129,7 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     new_tree.prune()
 
     # unmonkey patch
-    #_convert_to_skbio_treenode(new_tree)
+    _convert_to_skbio_treenode(new_tree)
     _edge_label(new_tree)
 
     return new_tree
@@ -148,7 +148,6 @@ def _edge_label(tree):
     for n in no_edge_label:
         max_edge_label += 1
         n.edge_num = max_edge_label
-
 
 
 def unzip(items):
