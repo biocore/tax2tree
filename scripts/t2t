@@ -2,6 +2,10 @@
 
 from skbio import TreeNode
 import click
+import json
+from io import StringIO
+
+import bp
 
 import t2t
 import t2t.nlevel as nl
@@ -45,7 +49,7 @@ def _add_nameholders(tree):
     tax information. Rather, we do "((X)flexneri, (Y)coli)escherichia);"
     """
     for n in list(tree.tips()):
-        new_node = skbio.TreeNode(length=0.0)
+        new_node = TreeNode(length=0.0)
         parent = n.parent
         n.parent.remove(n)
         n.parent = None
@@ -84,7 +88,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
 
     if placement:
         placement = json.loads(open(placement).read())
-        tree = bp.parse_newick(placement['tree'])
+        tree = bp.to_skbio_treenode(bp.parse_newick(placement['tree']))
         _add_nameholders(tree)
 
     append_rank = False
@@ -131,6 +135,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
 
     # replace the backbone tree with our decorated one
     if placement:
+        ut._edge_label(tree_)
         tree_ = bp.from_skbio_treenode(tree_)
         buf = StringIO()
         bp.write_newick(tree_, buf, include_edge=True)
@@ -141,7 +146,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
 
 
 @cli.command()
-@click.option('--tree', '-t', required=True, help='Input tree',
+@click.option('--tree', '-t', required=False, help='Input tree',
               type=click.File('U'))
 @click.option('--tips', '-n', required=True, help='Tip names',
               type=click.File('U'))
@@ -159,15 +164,29 @@ def reroot(tree, tips, output, placement):
 
     if placement:
         placement = json.loads(open(placement).read())
-        tree_ = bp.parse_newick(placement['tree'])
+        tree_ = bp.to_skbio_treenode(bp.parse_newick(placement['tree']))
     else:
         tree_ = TreeNode.read(tree)
 
     tipnames = [l.strip() for l in tips]
     rerooted = ut.reroot(tree_, tipnames)
-
+    
+    for n in rerooted.traverse(include_self=False):
+        if n.edge_num is None:
+            print("what")
+        if n.length is None:
+            print("the")
     if placement:
-        pass
+        print("output")
+        print(rerooted.edge_num)
+        print(rerooted.children[0].edge_num)
+        print(rerooted.children[1].edge_num)
+        rerooted = bp.from_skbio_treenode(rerooted)
+        buf = StringIO()
+        bp.write_newick(rerooted, buf, True)
+        buf.seek(0)
+        placement['tree'] = buf.read()
+        output.write(json.dumps(placement))
     else:
         output.write(str(rerooted))
 

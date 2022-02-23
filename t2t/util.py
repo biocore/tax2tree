@@ -117,19 +117,7 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
 
     # monkey patch? before we root
     _convert_to_local_treenode(tree)
-
-    # put edge labels where they don't exist use unique ones while we're
-    # at it
-    no_edge_label = []
-    max_edge_label = -1
-    for n in tree.traverse(include_self=True):
-        if hasattr(n, 'edge_num'):
-            max_edge_label = max(max_edge_label, n.edge_num)
-        else:
-            no_edge_label.append(n)
-    for n in no_edge_label:
-        max_edge_label += 1
-        n.edge_num = max_edge_label
+    _edge_label(tree)
 
     # root at the new node, unset its temporary name
     new_tree = tree.root_at(tmp_nodename)
@@ -142,8 +130,25 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
 
     # unmonkey patch
     _convert_to_skbio_treenode(new_tree)
+    _edge_label(new_tree)
 
     return new_tree
+
+
+def _edge_label(tree):
+    # put edge labels where they don't exist use unique ones while we're
+    # at it
+    no_edge_label = []
+    max_edge_label = -1
+    for n in tree.traverse(include_self=True):
+        if hasattr(n, 'edge_num') and n.edge_num is not None:
+            max_edge_label = max(max_edge_label, n.edge_num)
+        else:
+            no_edge_label.append(n)
+    for n in no_edge_label:
+        max_edge_label += 1
+        n.edge_num = max_edge_label
+
 
 
 def unzip(items):
