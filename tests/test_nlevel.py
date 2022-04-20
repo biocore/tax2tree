@@ -25,7 +25,8 @@ from t2t.nlevel import (load_consensus_map, collect_names_at_ranks_counts,
                         backfill_names_gap, commonname_promotion,
                         decorate_ntips, decorate_ntips_rank,
                         name_node_score_fold,
-                        validate_all_paths, score_tree)
+                        validate_all_paths, score_tree,
+                        promote_to_multifurcation)
 
 from skbio import TreeNode
 import sys
@@ -510,17 +511,11 @@ class NLevelTests(TestCase):
 
     def test_promote_to_multifurcation(self):
         tree = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
-                                  (((e,f)s__3),(g,h))g__2);"""])
+                                  ((e,f)s__3,(g,h)));"""],
+                             convert_underscores=False)
         exp = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
-                                 (((e,f)),(g,h))"s__3; g__2");"""])
-        fragset = {'g', 'h'}
-        obs = promote_to_multifurcation(tree, fragset)
-        self.assertEqual(str(obs), str(exp))
-
-        tree = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
-                                  (((e,f)s__3),(g,h)));"""])
-        exp = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
-                                 (((e,f)),(g,h))s__3);"""])
+                                 ((e,f),(g,h))s__3);"""],
+                             convert_underscores=False)
         fragset = {'g', 'h'}
         obs = promote_to_multifurcation(tree, fragset)
         self.assertEqual(str(obs), str(exp))

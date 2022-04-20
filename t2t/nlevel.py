@@ -965,3 +965,59 @@ def validate_all_paths(tree):
             bad_tips.append(tip)
 
     return bad_tips
+
+
+def promote_to_multifurcation(tree, fragment_names, verbose=False):
+    """Attempt to move taxon names to scope multifurcations
+
+    WARNING: operates inplace
+
+    Parameters
+    ----------
+    tree : skbio.TreeNode
+        A tree with multifurcation fragment placements
+    fragment_names : set
+        The set of tip names which are fragment placements
+
+    Returns
+    -------
+    skbio.TreeNode
+        The tree with updated internal names
+    """
+    rank_order_rev = {r: i for i, r in enumerate(RANK_ORDER)}
+    # set an attribute that defines whether a node only represents placements
+    for n in tree.postorder(include_self=True):
+        if n.is_tip():
+            if n.name in fragment_names:
+                n.only_fragments = True
+            else:
+                n.only_fragments = False
+        else:
+            n.only_fragments = all([c.only_fragments for c in n.children])
+
+    for n in tree.postorder(include_self=False):
+        if n.is_tip():
+            continue
+
+        if n.name is None:
+            continue
+
+        if n.name[0] not in rank_order_rev:
+            continue
+
+        if n.parent.name is not None:
+            continue
+
+        siblings = n.siblings()
+        if len(siblings) > 1:
+            continue
+
+        sibling = siblings[0]
+        if sibling.only_fragments:
+            name = n.name
+            n.name = None
+            n.parent.name = name
+            if verbose:
+                print("Promoted: %s" % name)
+
+    return tree

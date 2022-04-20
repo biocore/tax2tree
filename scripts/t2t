@@ -280,5 +280,20 @@ def consistency(tree, consensus_map, output_file, rooted, verbose):
         click.echo('Consistency written to: ' + output_file)
 
 
+@cli.command()
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--fragments', '-f', required=True, 
+              help='List of which tips are fragments',
+              type=click.File('U'))
+@click.option('--output', '-o', required=True, help='Result')
+def promote_multifurcation(tree, fragments, output):
+    """Fetch the taxonomy off the tree"""
+    fragments = {n.strip() for n in fragments}
+    tree = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
+    result = t2tcli.promote_multifurcation(tree, fragments, True)
+    result.write(output)
+
+
 if __name__ == '__main__':
     cli()
