@@ -4,6 +4,7 @@ from skbio import TreeNode
 import click
 import json
 from io import StringIO
+from random import shuffle
 
 import bp
 
@@ -153,10 +154,11 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
               type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Result',
               type=click.File('w'))
+@click.option('--out-of-target', required=False, help='initial outgroup')
 @click.option('--placement', '-p', required=False, 
               help='Placement data, if specified, the tree will be sourced '
                    'from the jplace data')
-def reroot(tree, tips, output, placement):
+def reroot(tree, tips, output, placement, out_of_target):
     """Reroot a tree"""
     if tree is not None and placement is not None:
         raise ValueError("Cannot specify --tree and --placement")
@@ -170,13 +172,18 @@ def reroot(tree, tips, output, placement):
         tree_ = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
 
     tipnames = [l.strip() for l in tips]
-    
+    tipnames_set = set(tipnames)
+    tipnames = list(tipnames_set & {n.name for n in tree_.tips()})
+
     # based on discussion with siavash, find a small set of out-of-target 
     # tips, root with them first, and then root with the target
-    tipnames_set = set(tipnames)
-    out_of_target = [n.name for n in tree_.tips() 
-                     if n.name not in tipnames_set][:10]
-    rerooted_1 = ut.reroot(tree_, out_of_target)
+    if out_of_target is not None:
+        out_of_target = {n.strip() for n in open(out_of_target)}
+        tree_names = {n.name for n in tree_.tips()}
+        out_of_target = out_of_target & tree_names
+        rerooted_1 = ut.reroot(tree_, out_of_target)
+    else:
+        rerooted_1 = tree_
     rerooted = ut.reroot(rerooted_1, tipnames)
 
     if placement:
