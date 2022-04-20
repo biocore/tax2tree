@@ -508,5 +508,23 @@ class NLevelTests(TestCase):
 
         self.assertEqual(str(t).rstrip(), exp)
 
+    def test_promote_to_multifurcation(self):
+        tree = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
+                                  (((e,f)s__3),(g,h))g__2);"""])
+        exp = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
+                                 (((e,f)),(g,h))"s__3; g__2");"""])
+        fragset = {'g', 'h'}
+        obs = promote_to_multifurcation(tree, fragset)
+        self.assertEqual(str(obs), str(exp))
+
+        tree = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
+                                  (((e,f)s__3),(g,h)));"""])
+        exp = TreeNode.read(["""(((a,b)s__1,(c,d)s__2)g__1,
+                                 (((e,f)),(g,h))s__3);"""])
+        fragset = {'g', 'h'}
+        obs = promote_to_multifurcation(tree, fragset)
+        self.assertEqual(str(obs), str(exp))
+
+
 if __name__ == '__main__':
     main()
