@@ -83,8 +83,10 @@ def _add_nameholders(tree):
               required=False, default="_", type=str)
 @click.option('--min-count', default=2, type=int,
               help="Minimum number of times a name needs to be represented")
+@click.option('--add-nameholder', is_flag=True, default=False,
+              help="Add nameholder nodes if tips likely to be named")
 def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
-             placement):
+             placement, add_nameholder):
     """Decorate a taxonomy onto a tree"""
     if tree is not None and placement is not None:
         raise ValueError("Cannot specify --tree and --placement")
@@ -94,6 +96,8 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     if placement:
         placement = json.loads(open(placement).read())
         tree = bp.to_skbio_treenode(bp.parse_newick(placement['tree']))
+
+    if placement or add_nameholder:
         _add_nameholders(tree)
 
     append_rank = False
