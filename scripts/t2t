@@ -230,13 +230,18 @@ def remap(otus, consensus_map, output):
               type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Result',
               type=click.File('w'))
-def fetch(tree, output):
+@click.option('--as-tree', is_flag=True, default=False, required=False,
+              help="Return the taxonomy as a tree")
+def fetch(tree, output, as_tree):
     """Fetch the taxonomy off the tree"""
-    result, error = t2tcli.fetch(tree)
+    result, error = t2tcli.fetch(tree, as_tree)
     if error:
         click.echo('\n'.join(result))
     else:
-        output.write('\n'.join(result))
+        if as_tree:
+            output.write(result)
+        else:
+            output.write('\n'.join(result))
 
 @cli.command()
 @click.option('--taxonomy', '-t', required=True, help='Input tree',

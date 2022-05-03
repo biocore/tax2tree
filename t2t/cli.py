@@ -6,7 +6,7 @@ import t2t.validate as val
 import bp
 
 
-def fetch(tree):
+def fetch(tree, as_tree=False):
     t = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
     ranks = set(nl.RANK_ORDER)
     res = []
@@ -27,7 +27,11 @@ def fetch(tree):
             res.append("\tCurrent lineage in tree: %s" % '; '.join(path[::-1]))
 
     else:
-        res = nl.pull_consensus_strings(t)
+        if as_tree:
+            res = nl.pull_consensus_strings(t, as_string=False)
+            res = str(TreeNode.from_taxonomy(res))
+        else:
+            res = nl.pull_consensus_strings(t)
         error = False
 
     return res, error
