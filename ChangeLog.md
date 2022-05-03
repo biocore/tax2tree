@@ -4,6 +4,8 @@ tax2tree ChangeLog
 tax2tree 1.1
 ------------
 
+Released on May 3, 2022.
+
 Changes:
 
 * py3 support
