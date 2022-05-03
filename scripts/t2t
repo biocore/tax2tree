@@ -311,6 +311,7 @@ def promote_multifurcation(tree, fragments, output):
               type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Result')
 def filter(tree, labels, output):
+    """Remove tips from a phylogeny"""
     tree = bp.parse_newick(tree.read())
     labels = {n.strip() for n in labels}
     names = {tree.name(i) for i, v in enumerate(tree.B) if v}
@@ -319,63 +320,63 @@ def filter(tree, labels, output):
         bp.write_newick(tree, fp, False)
 
 
-@cli.command()
-@click.option('--tree', '-t', required=True, help='Input tree',
-              type=click.File('U'))
-@click.option('--seqs', '-s', required=True, help='placement sequences',
-              type=click.Path(exists=True))
-@click.option('--output', '-o', required=True, help='Result')
-def make_labels(tree, seqs, output):
-    import hashlib
-    import pandas as pd
-    tree = bp.parse_newick(tree.read())
-    names = {tree.name(i) for i, v in enumerate(tree.B) if v}
+#@cli.command()
+#@click.option('--tree', '-t', required=True, help='Input tree',
+#              type=click.File('U'))
+#@click.option('--seqs', '-s', required=True, help='placement sequences',
+#              type=click.Path(exists=True))
+#@click.option('--output', '-o', required=True, help='Result')
+#def make_labels(tree, seqs, output):
+#    import hashlib
+#    import pandas as pd
+#    tree = bp.parse_newick(tree.read())
+#    names = {tree.name(i) for i, v in enumerate(tree.B) if v}
+#
+#    with open(output, 'wb') as fp:
+#        fp.write(b"id\tmd5\tsequence\n")
+#        for rec in skbio.read(seqs, format='fasta'):
+#            id = rec.metadata['id']
+#            if id in names:
+#                seq = rec._string
+#                h = hashlib.md5(seq).hexdigest().encode('ascii')
+#                fp.write(b"%s\t%s\t%s\n" % (id.encode('ascii'), h, seq))
 
-    with open(output, 'wb') as fp:
-        fp.write(b"id\tmd5\tsequence\n")
-        for rec in skbio.read(seqs, format='fasta'):
-            id = rec.metadata['id']
-            if id in names:
-                seq = rec._string
-                h = hashlib.md5(seq).hexdigest().encode('ascii')
-                fp.write(b"%s\t%s\t%s\n" % (id.encode('ascii'), h, seq))
-
-@cli.command()
-@click.option('--tree', '-t', required=True, help='Input tree',
-              type=click.File('U'))
-@click.option('--labels', '-m', required=True, help='existing labelings',
-              type=click.Path(exists=True))
-@click.option('--as-md5', is_flag=True, default=False)
-@click.option('--as-asv', is_flag=True, default=False)
-@click.option('--output', '-o', required=True, help='Result')
-def relabel(tree, labels, as_md5, as_asv, output):
-    if not as_md5 and not as_asv:
-        raise ValueError("need to transform into something")
-    if as_md5 and as_asv:
-        raise ValueError("cannot transform into both")
-
-    tree = bp.parse_newick(tree.read())
-    names = {tree.name(i) for i, v in enumerate(tree.B) if v}
-    labels = pd.read_csv(labels, sep='\t', dtype=str).set_index('id')
-    labels = labels.loc[names & set(labels.index)]
-
-    if as_md5:
-        labels = labels['md5'].to_dict()
-    else:
-        # asvs aren't long... lets not put full length sequence into the 
-        # tree
-        labels = labels[labels['sequence'].apply(lambda x: len(x) < 301)]
-        labels = labels['sequence'].to_dict()
-
-    new_names = np.zeros(len(tree.B), dtype=object)
-    for i, v in enumerate(tree.B):
-        if v:
-            current_name = tree.name(i)
-            new_names[i] = labels.get(current_name, current_name)
-    tree.set_names(new_names)
-
-    with open(output, 'w') as fp:
-        bp.write_newick(tree, fp, False)
+#@cli.command()
+#@click.option('--tree', '-t', required=True, help='Input tree',
+#              type=click.File('U'))
+#@click.option('--labels', '-m', required=True, help='existing labelings',
+#              type=click.Path(exists=True))
+#@click.option('--as-md5', is_flag=True, default=False)
+#@click.option('--as-asv', is_flag=True, default=False)
+#@click.option('--output', '-o', required=True, help='Result')
+#def relabel(tree, labels, as_md5, as_asv, output):
+#    if not as_md5 and not as_asv:
+#        raise ValueError("need to transform into something")
+#    if as_md5 and as_asv:
+#        raise ValueError("cannot transform into both")
+#
+#    tree = bp.parse_newick(tree.read())
+#    names = {tree.name(i) for i, v in enumerate(tree.B) if v}
+#    labels = pd.read_csv(labels, sep='\t', dtype=str).set_index('id')
+#    labels = labels.loc[names & set(labels.index)]
+#
+#    if as_md5:
+#        labels = labels['md5'].to_dict()
+#    else:
+#        # asvs aren't long... lets not put full length sequence into the 
+#        # tree
+#        labels = labels[labels['sequence'].apply(lambda x: len(x) < 301)]
+#        labels = labels['sequence'].to_dict()
+#
+#    new_names = np.zeros(len(tree.B), dtype=object)
+#    for i, v in enumerate(tree.B):
+#        if v:
+#            current_name = tree.name(i)
+#            new_names[i] = labels.get(current_name, current_name)
+#    tree.set_names(new_names)
+#
+#    with open(output, 'w') as fp:
+#        bp.write_newick(tree, fp, False)
 
 
 if __name__ == '__main__':
