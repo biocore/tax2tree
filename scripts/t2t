@@ -96,6 +96,8 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     if placement:
         placement = json.loads(open(placement).read())
         tree = bp.to_skbio_treenode(bp.parse_newick(placement['tree']))
+    else:
+        tree = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
 
     if placement or add_nameholder:
         _add_nameholders(tree)
