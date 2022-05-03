@@ -1,11 +1,13 @@
 from skbio import TreeNode
 
+
 import t2t.nlevel as nl
 import t2t.validate as val
+import bp
 
 
 def fetch(tree):
-    t = TreeNode.from_newick(open(tree))
+    t = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
     ranks = set(nl.RANK_ORDER)
     res = []
     error = True
@@ -56,3 +58,7 @@ def validate(lines, limit, flat_errors, hierarchy_errors):
                 res.append("\t\t%s, %s" % (parent, err['Parents'][parent]))
 
     return res, False
+
+
+def promote_multifurcation(tree, fragments, verbose):
+    return nl.promote_to_multifurcation(tree, fragments, verbose)

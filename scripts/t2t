@@ -4,8 +4,12 @@ from skbio import TreeNode
 import click
 import json
 from io import StringIO
+from random import shuffle
 
+import numpy as np
 import bp
+import skbio
+import pandas as pd
 
 import t2t
 import t2t.nlevel as nl
@@ -79,8 +83,10 @@ def _add_nameholders(tree):
               required=False, default="_", type=str)
 @click.option('--min-count', default=2, type=int,
               help="Minimum number of times a name needs to be represented")
+@click.option('--add-nameholder', is_flag=True, default=False,
+              help="Add nameholder nodes if tips likely to be named")
 def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
-             placement):
+             placement, add_nameholder):
     """Decorate a taxonomy onto a tree"""
     if tree is not None and placement is not None:
         raise ValueError("Cannot specify --tree and --placement")
@@ -90,6 +96,8 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     if placement:
         placement = json.loads(open(placement).read())
         tree = bp.to_skbio_treenode(bp.parse_newick(placement['tree']))
+
+    if placement or add_nameholder:
         _add_nameholders(tree)
 
     append_rank = False
@@ -153,10 +161,11 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
               type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Result',
               type=click.File('w'))
+@click.option('--out-of-target', required=False, help='initial outgroup')
 @click.option('--placement', '-p', required=False, 
               help='Placement data, if specified, the tree will be sourced '
                    'from the jplace data')
-def reroot(tree, tips, output, placement):
+def reroot(tree, tips, output, placement, out_of_target):
     """Reroot a tree"""
     if tree is not None and placement is not None:
         raise ValueError("Cannot specify --tree and --placement")
@@ -170,13 +179,18 @@ def reroot(tree, tips, output, placement):
         tree_ = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
 
     tipnames = [l.strip() for l in tips]
-    
+    tipnames_set = set(tipnames)
+    tipnames = list(tipnames_set & {n.name for n in tree_.tips()})
+
     # based on discussion with siavash, find a small set of out-of-target 
     # tips, root with them first, and then root with the target
-    tipnames_set = set(tipnames)
-    out_of_target = [n.name for n in tree_.tips() 
-                     if n.name not in tipnames_set][:10]
-    rerooted_1 = ut.reroot(tree_, out_of_target)
+    if out_of_target is not None:
+        out_of_target = {n.strip() for n in open(out_of_target)}
+        tree_names = {n.name for n in tree_.tips()}
+        out_of_target = out_of_target & tree_names
+        rerooted_1 = ut.reroot(tree_, out_of_target)
+    else:
+        rerooted_1 = tree_
     rerooted = ut.reroot(rerooted_1, tipnames)
 
     if placement:
@@ -271,6 +285,95 @@ def consistency(tree, consensus_map, output_file, rooted, verbose):
     c.write(output_file, consistency_index)
     if verbose:
         click.echo('Consistency written to: ' + output_file)
+
+
+@cli.command()
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--fragments', '-f', required=True, 
+              help='List of which tips are fragments',
+              type=click.File('U'))
+@click.option('--output', '-o', required=True, help='Result')
+def promote_multifurcation(tree, fragments, output):
+    """Fetch the taxonomy off the tree"""
+    fragments = {n.strip() for n in fragments}
+    tree = bp.to_skbio_treenode(bp.parse_newick(tree.read()))
+    result = t2tcli.promote_multifurcation(tree, fragments, True)
+    result.write(output)
+
+
+@cli.command()
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--labels', '-m', required=True, help='to remove',
+              type=click.File('U'))
+@click.option('--output', '-o', required=True, help='Result')
+def filter(tree, labels, output):
+    tree = bp.parse_newick(tree.read())
+    labels = {n.strip() for n in labels}
+    names = {tree.name(i) for i, v in enumerate(tree.B) if v}
+    tree = tree.shear(names - labels)
+    with open(output, 'w') as fp:
+        bp.write_newick(tree, fp, False)
+
+
+@cli.command()
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--seqs', '-s', required=True, help='placement sequences',
+              type=click.Path(exists=True))
+@click.option('--output', '-o', required=True, help='Result')
+def make_labels(tree, seqs, output):
+    import hashlib
+    import pandas as pd
+    tree = bp.parse_newick(tree.read())
+    names = {tree.name(i) for i, v in enumerate(tree.B) if v}
+
+    with open(output, 'wb') as fp:
+        fp.write(b"id\tmd5\tsequence\n")
+        for rec in skbio.read(seqs, format='fasta'):
+            id = rec.metadata['id']
+            if id in names:
+                seq = rec._string
+                h = hashlib.md5(seq).hexdigest().encode('ascii')
+                fp.write(b"%s\t%s\t%s\n" % (id.encode('ascii'), h, seq))
+
+@cli.command()
+@click.option('--tree', '-t', required=True, help='Input tree',
+              type=click.File('U'))
+@click.option('--labels', '-m', required=True, help='existing labelings',
+              type=click.Path(exists=True))
+@click.option('--as-md5', is_flag=True, default=False)
+@click.option('--as-asv', is_flag=True, default=False)
+@click.option('--output', '-o', required=True, help='Result')
+def relabel(tree, labels, as_md5, as_asv, output):
+    if not as_md5 and not as_asv:
+        raise ValueError("need to transform into something")
+    if as_md5 and as_asv:
+        raise ValueError("cannot transform into both")
+
+    tree = bp.parse_newick(tree.read())
+    names = {tree.name(i) for i, v in enumerate(tree.B) if v}
+    labels = pd.read_csv(labels, sep='\t', dtype=str).set_index('id')
+    labels = labels.loc[names & set(labels.index)]
+
+    if as_md5:
+        labels = labels['md5'].to_dict()
+    else:
+        # asvs aren't long... lets not put full length sequence into the 
+        # tree
+        labels = labels[labels['sequence'].apply(lambda x: len(x) < 301)]
+        labels = labels['sequence'].to_dict()
+
+    new_names = np.zeros(len(tree.B), dtype=object)
+    for i, v in enumerate(tree.B):
+        if v:
+            current_name = tree.name(i)
+            new_names[i] = labels.get(current_name, current_name)
+    tree.set_names(new_names)
+
+    with open(output, 'w') as fp:
+        bp.write_newick(tree, fp, False)
 
 
 if __name__ == '__main__':
