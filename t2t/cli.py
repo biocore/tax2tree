@@ -27,7 +27,7 @@ def fetch(tree, as_tree=False):
             res.append("\tCurrent lineage in tree: %s" % '; '.join(path[::-1]))
 
     else:
-        res = nl.pull_consensus_strings(t, as_tree)
+        res = nl.pull_consensus_strings(t, as_tree=as_tree)
         error = False
 
     return res, error
