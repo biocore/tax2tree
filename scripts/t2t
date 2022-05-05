@@ -239,7 +239,7 @@ def fetch(tree, output, as_tree):
         click.echo('\n'.join(result))
     else:
         if as_tree:
-            output.write(result)
+            output.write(str(result))
         else:
             output.write('\n'.join(result))
 
