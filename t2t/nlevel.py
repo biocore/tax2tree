@@ -828,7 +828,7 @@ def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
             node.name = '; '.join(node.BackFillNames)
 
 
-def pull_consensus_strings(tree, verbose=False, append_prefix=True):
+def pull_consensus_strings(tree, verbose=False, append_prefix=True, as_tree=False):
     """Pulls consensus strings off of tree
 
     assumes .name is set
@@ -873,8 +873,15 @@ def pull_consensus_strings(tree, verbose=False, append_prefix=True):
                 consensus_string[rank_idx] = n.name
 
         # join strings with tip id
-        constrings.append('\t'.join([tipid, '; '.join(consensus_string)]))
-    return constrings
+        if as_tree:
+            constrings.append((tipid, consensus_string))
+        else:
+            constrings.append('\t'.join([tipid, '; '.join(consensus_string)]))
+
+    if as_tree:
+        return TreeNode.from_taxonomy(constrings)
+    else:
+        return constrings
 
 
 def save_bootstraps(tree, verbose=False):
