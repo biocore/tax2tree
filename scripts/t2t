@@ -128,6 +128,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     if not no_suffix:
         nl.make_names_unique(tree_, suffix_glue_char=suffix_char)
 
+    nl.correct_decorated(tree_, contree, verbose) 
     constrings = nl.pull_consensus_strings(tree_)
 
     f = open(output + '-consensus-strings', 'w')

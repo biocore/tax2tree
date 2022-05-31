@@ -25,6 +25,31 @@ BAD_NAMES = [
 BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(str.lower, BAD_NAMES)))
 
 
+def lineage_cache(t):
+    """Cache ancestral lineage information on a tree"""
+    for n in t.preorder(include_self=True):
+        if n.is_root():
+            n.lineage_cache = []
+        else:
+            n.lineage_cache = n.parent.lineage_cache[:]
+            if n.name is not None and '__' in n.name:
+                n.lineage_cache.extend(n.name.split('; '))
+
+def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
+    """Remove taxon if a violation with input taxonomy is observed"""
+    # cache paths
+    lineage_cache(decorated_tree)
+    lineage_cache(input_taxonomy_tree)
+    for n in decorated_tree.preorder(include_self=False):
+        if n.name is not None and '__' in n.name:
+            input_node = input_taxonomy_tree.find(n.lineage_cache[-1])
+            if n.lineage_cache != input_node.lineage_cache:
+                if verbose:
+                    print(f"OBSERVED: {n.lineage_cache}\n"
+                          f"EXPECTED: {input_node.lineage_cache}\n"
+                          "---")
+                n.name = None
+
 def set_rank_order(order):
     """Reset the global RANK_ORDER"""
     global RANK_ORDER
