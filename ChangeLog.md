@@ -1,6 +1,17 @@
 tax2tree ChangeLog
 ==================
 
+tax2tree 1.2
+------------
+
+Changes:
+
+* added a method to test consistency of input/decorated taxonomies [#40](https://github.com/biocore/tax2tree/pull/40)
+
+Bug fix:
+
+* missed --as-tree support [#39](https://github.com/biocore/tax2tree/pull/39)
+
 tax2tree 1.1
 ------------
 
