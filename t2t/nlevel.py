@@ -35,6 +35,7 @@ def lineage_cache(t):
             if n.name is not None and '__' in n.name:
                 n.lineage_cache.extend(n.name.split('; '))
 
+
 def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
     """Remove taxon if a violation with input taxonomy is observed"""
     # cache paths
@@ -49,6 +50,7 @@ def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
                           f"EXPECTED: {input_node.lineage_cache}\n"
                           "---")
                 n.name = None
+
 
 def set_rank_order(order):
     """Reset the global RANK_ORDER"""
