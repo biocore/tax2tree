@@ -32,8 +32,16 @@ def lineage_cache(t):
             n.lineage_cache = []
         else:
             n.lineage_cache = n.parent.lineage_cache[:]
-            if n.name is not None and '__' in n.name:
+            if n.name is not None and n.name[1:3] == '__':
                 n.lineage_cache.extend(n.name.split('; '))
+
+
+def equal_ignoring_polyphyletic(name_a, name_b):
+    if name_a[-2] == '_':
+        name_a = name_a.rsplit('_', 1)[0]
+    if name_b[-2] == '_':
+        name_b = name_b.rsplit('_', 1)[0]
+    return name_a == name_b
 
 
 def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
@@ -42,14 +50,17 @@ def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
     lineage_cache(decorated_tree)
     lineage_cache(input_taxonomy_tree)
     for n in decorated_tree.preorder(include_self=False):
-        if n.name is not None and '__' in n.name:
+        if n.name is not None and n.name[1:3] == '__':
             input_node = input_taxonomy_tree.find(n.lineage_cache[-1])
             if n.lineage_cache != input_node.lineage_cache:
-                if verbose:
-                    print(f"OBSERVED: {n.lineage_cache}\n"
-                          f"EXPECTED: {input_node.lineage_cache}\n"
-                          "---")
-                n.name = None
+                for o, e in zip(n.lineage_cache, input_node.lineage_cache):
+                    if not equal_ignoring_polyphyletic(o, e):
+                        if verbose:
+                            print(f"OBSERVED: {n.lineage_cache}\n"
+                                  f"EXPECTED: {input_node.lineage_cache}\n"
+                                  "---")
+                        n.name = None
+                        break
 
 
 def set_rank_order(order):

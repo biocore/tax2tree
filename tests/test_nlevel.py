@@ -43,7 +43,7 @@ class NLevelTests(TestCase):
         pass
 
     def test_correct_decorated(self):
-        truth = TreeNode.read(["(((a,b)s__foo,(c,d)s__bar)g__baz,((e,f)s__biz)g__cool);"],
+        truth = TreeNode.read(["(((a,b)s__foo,(c,d)s__bar_A)g__baz,((e,f)s__biz)g__cool);"],  # noqa
                               convert_underscores=False)
         obs = TreeNode.read(["(((a,b)'g__baz; s__foo',((c,d)s__biz)g__baz));"], # noqa
                             convert_underscores=False)
