@@ -1054,7 +1054,7 @@ def promote_to_multifurcation(tree, fragment_names, verbose=False):
             continue
 
         siblings = n.siblings()
-        if len(siblings) > 1:
+        if len(siblings) > 1 or len(siblings) == 0:
             continue
 
         sibling = siblings[0]
