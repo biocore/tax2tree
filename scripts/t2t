@@ -77,6 +77,9 @@ def _add_nameholders(tree):
               help="Don't append suffixes (e.g. _1, _2) to polyphyletic " +
                    "groups",
               is_flag=True, default=False)
+@click.option('--use-node-id',
+              help="Use the node ID for differentiating polyphyletic labels",
+              is_flag=True, default=False)
 @click.option('--suffix-char', '-s',
               help="Use a different char (instead of underscore) for " +
                    "polyphyletic group suffixes",
@@ -96,7 +99,7 @@ def _add_nameholders(tree):
               required=False)
 def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
              placement, add_nameholder, secondary_taxonomy,
-             recover_polyphyletic, correct_binomials):
+             recover_polyphyletic, correct_binomials, use_node_id):
     """Decorate a taxonomy onto a tree"""
     if tree is not None and placement is not None:
         raise ValueError("Cannot specify --tree and --placement")
@@ -146,7 +149,8 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     nl.commonname_promotion(tree_)
 
     if not no_suffix:
-        nl.make_names_unique(tree_, suffix_glue_char=suffix_char)
+        nl.make_names_unique(tree_, suffix_glue_char=suffix_char,
+                             use_node_id=use_node_id)
 
     if recover_polyphyletic:
         tree_ = nl.recover_from_polyphyletic_sibling(tree_, verbose=True)

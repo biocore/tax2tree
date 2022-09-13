@@ -1040,7 +1040,7 @@ class TaxaName(object):
 
 
 def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
-                      verbose=False):
+                      verbose=False, use_node_id=False):
     """Appends on a unique number if multiple of the same names exist
 
     ordered by number of tips, ie, _1 has more tips that _2
@@ -1049,6 +1049,9 @@ def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
     """
     if verbose:
         print("Assigning unique tags to duplicate names...")
+
+    if use_node_id:
+        tree.assign_ids()
 
     # build up a dict of the names and how many tips descend
     name_lookup = {}
@@ -1071,7 +1074,8 @@ def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
                 if node.BackFillNames[idx].split('__')[1] != '':
                     if append_suffix:
                         unique_name = suffix_glue_char.join(
-                            [node.BackFillNames[idx], str(count)])
+                            [node.BackFillNames[idx],
+                            str(node.id if use_node_id else count)])
                         node.BackFillNames[idx] = unique_name
 
     # should probably be refactored, but assign .name based on .BackFillNames
