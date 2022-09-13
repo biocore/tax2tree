@@ -128,6 +128,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     if not no_suffix:
         nl.make_names_unique(tree_, suffix_glue_char=suffix_char)
 
+    nl.correct_decorated(tree_, contree, verbose=True) 
     constrings = nl.pull_consensus_strings(tree_)
 
     f = open(output + '-consensus-strings', 'w')
@@ -339,8 +340,9 @@ import click
               help='An optional group to briefly summarize in stdout')
 @click.option('--output', type=click.Path(exists=False), required=True,
               help='Where to write the output too')
+@click.option('--get-records', is_flag=True, required=False, default=False)
 def compare_to_decorated(backbone_taxonomy, decorated_taxonomy, level, 
-                         examine, output):
+                         examine, output, get_records):
     """Compare an existing taxonomy to decorated. Assumes common taxonomy"""
     def load(f):
         df = pd.read_csv(f, sep='\t', names=['id', 'taxon']).set_index('id')
@@ -403,6 +405,20 @@ def compare_to_decorated(backbone_taxonomy, decorated_taxonomy, level,
                 click.echo(backbone.loc[x, 'taxon'])
                 click.echo('---')
                 click.echo(decorated.loc[x, 'taxon'])
+
+    if get_records:
+        results = []
+        for n in df['name']:
+            bbname = backbone[backbone['target'] == n]
+            decname = decorated[decorated['target'] == n]
+
+            for id in set(decname.index) - set(bbname.index):
+                exp = backbone.loc[id, 'target']
+                results.append((id, n, exp))
+
+        results = pd.DataFrame(results, columns=['id', 'observed', 'expected'])
+        results.to_csv(f'{output}.false_positive.records.tsv', sep='\t',
+                       index=False, header=True)
 
 
 if __name__ == '__main__':

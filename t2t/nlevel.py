@@ -25,6 +25,44 @@ BAD_NAMES = [
 BAD_NAMES_REGEX = re.compile("(%s)" % ')|('.join(map(str.lower, BAD_NAMES)))
 
 
+def lineage_cache(t):
+    """Cache ancestral lineage information on a tree"""
+    for n in t.preorder(include_self=True):
+        if n.is_root():
+            n.lineage_cache = []
+        else:
+            n.lineage_cache = n.parent.lineage_cache[:]
+            if n.name is not None and n.name[1:3] == '__':
+                n.lineage_cache.extend(n.name.split('; '))
+
+
+def equal_ignoring_polyphyletic(name_a, name_b):
+    if name_a[-2] == '_':
+        name_a = name_a.rsplit('_', 1)[0]
+    if name_b[-2] == '_':
+        name_b = name_b.rsplit('_', 1)[0]
+    return name_a == name_b
+
+
+def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
+    """Remove taxon if a violation with input taxonomy is observed"""
+    # cache paths
+    lineage_cache(decorated_tree)
+    lineage_cache(input_taxonomy_tree)
+    for n in decorated_tree.preorder(include_self=False):
+        if n.name is not None and n.name[1:3] == '__':
+            input_node = input_taxonomy_tree.find(n.lineage_cache[-1])
+            if n.lineage_cache != input_node.lineage_cache:
+                for o, e in zip(n.lineage_cache, input_node.lineage_cache):
+                    if not equal_ignoring_polyphyletic(o, e):
+                        if verbose:
+                            print(f"OBSERVED: {n.lineage_cache}\n"
+                                  f"EXPECTED: {input_node.lineage_cache}\n"
+                                  "---")
+                        n.name = None
+                        break
+
+
 def set_rank_order(order):
     """Reset the global RANK_ORDER"""
     global RANK_ORDER
@@ -1016,7 +1054,7 @@ def promote_to_multifurcation(tree, fragment_names, verbose=False):
             continue
 
         siblings = n.siblings()
-        if len(siblings) > 1:
+        if len(siblings) > 1 or len(siblings) == 0:
             continue
 
         sibling = siblings[0]

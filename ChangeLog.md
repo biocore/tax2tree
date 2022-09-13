@@ -7,6 +7,7 @@ tax2tree 1.2
 Changes:
 
 * added a method to test consistency of input/decorated taxonomies [#40](https://github.com/biocore/tax2tree/pull/40)
+* added a method to correct invalid taxonomies [#41](https://github.com/biocore/tax2tree/pull/41)
 
 Bug fix:
 

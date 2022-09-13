@@ -26,7 +26,8 @@ from t2t.nlevel import (load_consensus_map, collect_names_at_ranks_counts,
                         decorate_ntips, decorate_ntips_rank,
                         name_node_score_fold,
                         validate_all_paths, score_tree,
-                        promote_to_multifurcation)
+                        promote_to_multifurcation,
+                        lineage_cache, correct_decorated)
 
 from skbio import TreeNode
 import sys
@@ -40,6 +41,28 @@ class NLevelTests(TestCase):
 
     def setUp(self):
         pass
+
+    def test_correct_decorated(self):
+        truth = TreeNode.read(["(((a,b)s__foo,(c,d)s__bar_A)g__baz,((e,f)s__biz)g__cool);"],  # noqa
+                              convert_underscores=False)
+        obs = TreeNode.read(["(((a,b)'g__baz; s__foo',((c,d)s__biz)g__baz));"], # noqa
+                            convert_underscores=False)
+        exp = TreeNode.read(["(((a,b)'g__baz; s__foo',((c,d))g__baz));"],
+                            convert_underscores=False)
+        correct_decorated(obs, truth)
+        self.assertEqual(list([n.name for n in obs.traverse()]),
+                         list([n.name for n in exp.traverse()]))
+
+    def test_lineage_cache(self):
+        t = TreeNode.read(["(((((a,b)s__foo,(c,d)s__bar)g__baz),(x)'g__y; s__x')f__top);"],  # noqa
+                          convert_underscores=False)
+        lineage_cache(t)
+        self.assertEqual(t.find('s__foo').lineage_cache,
+                         ['f__top', 'g__baz', 's__foo'])
+        self.assertEqual(t.find('s__bar').lineage_cache,
+                         ['f__top', 'g__baz', 's__bar'])
+        self.assertEqual(t.find('g__y; s__x').lineage_cache,
+                         ['f__top','g__y', 's__x'])
 
     def test_score_tree(self):
         """Determine's the tree's fmeasure score"""
