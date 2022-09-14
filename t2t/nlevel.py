@@ -3,7 +3,8 @@
 from collections import defaultdict
 from operator import itemgetter
 from numpy import argmin, array, where
-from skbio import TreeNode, MissingNodeError
+from skbio import TreeNode
+from skbio.tree import MissingNodeError
 from t2t.util import unzip
 import re
 
