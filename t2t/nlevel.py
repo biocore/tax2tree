@@ -3,7 +3,7 @@
 from collections import defaultdict
 from operator import itemgetter
 from numpy import argmin, array, where
-from skbio import TreeNode
+from skbio import TreeNode, MissingNodeError
 from t2t.util import unzip
 import re
 
@@ -51,14 +51,20 @@ def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
     lineage_cache(input_taxonomy_tree)
     for n in decorated_tree.preorder(include_self=False):
         if n.name is not None and n.name[1:3] == '__':
-            input_node = input_taxonomy_tree.find(n.lineage_cache[-1])
+            try:
+                input_node = input_taxonomy_tree.find(n.lineage_cache[-1])
+            except MissingNodeError:
+                # the lineage must be in the secondary taxonomy, and we
+                # already assume the secondary taxonomy may vary
+                # relative to the input
+                continue
             if n.lineage_cache != input_node.lineage_cache:
                 for o, e in zip(n.lineage_cache, input_node.lineage_cache):
                     if not equal_ignoring_polyphyletic(o, e):
                         if verbose:
-                            print(f"OBSERVED: {n.lineage_cache}\n"
-                                  f"EXPECTED: {input_node.lineage_cache}\n"
-                                  "---")
+                            print(f"AFFECTED: {len(list(n.tips()))}\t"
+                                  f"OBSERVED: {n.lineage_cache}\t"
+                                  f"EXPECTED: {input_node.lineage_cache}")
                         n.name = None
                         break
 
