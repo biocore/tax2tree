@@ -31,6 +31,10 @@ from t2t.nlevel import (load_consensus_map, collect_names_at_ranks_counts,
                         _named_siblings, polyphyletic_unique,
                         normalize_species_binomial,
                         correct_species_binomial,
+                        equal_ignoring_polyphyletic,
+                        POLY_RE, GENERAL_POLY_RE, SPECIES_POLY_RE,
+                        EXTRACT_POLY_GENUS,
+                        make_names_unique,
                         lineage_cache, correct_decorated)
 
 from skbio import TreeNode
@@ -45,6 +49,62 @@ class NLevelTests(TestCase):
 
     def setUp(self):
         pass
+
+    def test_make_names_unique(self):
+        t = TreeNode.read(["((a,b)g__foo,(c,d)g__foo,(e,f)g__bar,(g,h)g__bar_A);"],
+                          convert_underscores=False)
+        exp = "((a,b)'g__foo_8',(c,d)'g__foo_9',(e,f)'g__bar',(g,h)'g__bar_A');\n"
+        make_names_unique(t)
+        self.assertEqual(str(t), str(exp))
+
+    def test_equal_ignoring_polyphyletic(self):
+        tests = [(('g__foo', 'g__foo'), True),
+                 (('g__foo', 'g__bar'), False),
+                 (('g__foo_A', 'g__foo'), True),
+                 (('g__foo_A', 'g__foo_1'), True),
+                 (('g__foo_A', 'g__foo_B'), True),
+                 (('s__foo_A bar', 's__foo_B bar'), True),
+                 (('s__foo bar', 's__foo bar'), True),
+                 (('s__foo bar_A', 's__foo_B bar_1234'), True),
+                 (('s__foo_A bar_B', 's__foo_B bar_X'), True),
+                 (('s__foo_A baz_B', 's__foo_B bar_X'), False),
+                 (('s__baz_A bar_B', 's__foo_B bar_X'), False)]
+        for (a, b), exp in tests:
+            self.assertEqual(equal_ignoring_polyphyletic(a, b), exp)
+
+    def test_check_regexs(self):
+        tests = [('g__foo', False, None),
+                 ('s__foo_A bar', True, ('s__foo', )),
+                 ('g__foo_A', True, ('g__foo', ))]
+
+        for in_, exp_match, exp_grp in tests:
+            obs = POLY_RE.match(in_)
+            if exp_match:
+                self.assertTrue(obs is not None)
+            if obs is not None:
+                self.assertEqual(obs.groups(), exp_grp)
+
+        tests = [('s__foo_A', ('s__foo', '_A')),
+                 ('s__foo_1234', ('s__foo', '_1234')),
+                 ('s__foo', ('s__foo', None))]
+
+        for in_, exp in tests:
+            obs = GENERAL_POLY_RE.match(in_)
+            self.assertEqual(obs.groups(), exp)
+
+        tests = [('s__foo_A bar', ('s__foo_A', 'bar', None)),
+                 ('s__foo bar_123', ('s__foo', 'bar', '_123'))]
+
+        for in_, exp in tests:
+            obs = SPECIES_POLY_RE.match(in_)
+            self.assertEqual(obs.groups(), exp)
+            #SPECIES_POLY_RE = re.compile(r"^(s__.+) (.+)(_[0-9A-Z]+)?$")
+
+        tests = [('g__foo_A', ('foo_A', )),
+                 ('g__foo_A_12', ('foo_A_12', ))]
+        for in_, exp in tests:
+            obs = EXTRACT_POLY_GENUS.match(in_)
+            self.assertEqual(obs.groups(), exp)
 
     def test_correct_decorated(self):
         truth = TreeNode.read(["(((a,b)s__foo,(c,d)s__bar_A)g__baz,((e,f)s__biz)g__cool);"],  # noqa
@@ -535,6 +595,7 @@ class NLevelTests(TestCase):
                  (('g__foo_A', 's__foo bar'), 's__foo_A bar'),
                  (('g__foo_A', 's__baz bar'), 's__baz bar'),  # do not create new species names!  # noqa
                  (('g__foo_A', 's__foo_A bar'), 's__foo_A bar'),
+                 (('g__foo_A_12', 's__foo_A bar'), 's__foo_A_12 bar'),
                  (('g__foo_A', 's__foo_A bar_A'), 's__foo_A bar_A'),
                  (('g__foo', 's__foo bar_A'), 's__foo bar_A')]
         for in_, exp in tests:

@@ -38,12 +38,26 @@ def lineage_cache(t):
 
 
 def equal_ignoring_polyphyletic(name_a, name_b):
-    if name_a[-2] == '_':
-        name_a = name_a.rsplit('_', 1)[0]
-    if name_b[-2] == '_':
-        name_b = name_b.rsplit('_', 1)[0]
-    return name_a == name_b
+    """Tests true if names are equal ignoring presence of polyphyletic tag"""
+    name_a_match = GENERAL_POLY_RE.match(name_a)
+    name_b_match = GENERAL_POLY_RE.match(name_b)
 
+    if name_a_match is None or name_b_match is None:
+        raise ValueError("%s | %s" % (name_a, name_b))
+
+    name_a_base = name_a_match.groups()[0]
+    name_b_base = name_b_match.groups()[0]
+
+    if name_a_base != name_b_base:
+        return False
+
+    if name_a.startswith('s__'):
+        species_name_a = SPECIES_POLY_RE.match(name_a)
+        species_name_b = SPECIES_POLY_RE.match(name_b)
+
+        return species_name_a.groups()[1] == species_name_b.groups()[1]
+    else:
+        return True
 
 def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
     """Remove taxon if a violation with input taxonomy is observed"""
@@ -59,15 +73,18 @@ def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
                 # already assume the secondary taxonomy may vary
                 # relative to the input
                 continue
+
             if n.lineage_cache != input_node.lineage_cache:
                 for o, e in zip(n.lineage_cache, input_node.lineage_cache):
                     if not equal_ignoring_polyphyletic(o, e):
                         if verbose:
                             print(f"AFFECTED: {len(list(n.tips()))}\t"
+                                  f"EXAMPLE: {list(n.tips())[0].name}\t"
                                   f"OBSERVED: {n.lineage_cache}\t"
                                   f"EXPECTED: {input_node.lineage_cache}")
                         n.name = None
                         break
+
 
 
 def set_rank_order(order):
@@ -800,8 +817,12 @@ def backfill_from_secondary(tree, secondary_taxonomy):
         tip.parent.BackFillNames.extend(missing[::-1])
 
 
-POLY_RE = re.compile(r"^([dpcofgs]__.+)_[A-Z]+$")
-EXTRACT_POLY_GENUS = re.compile(r"^g__(.+_[A-Z]+)$")
+# gtdb uses A-Z, t2t can use numbers or letters
+# both will only pull the first name so use with caution with species labels
+POLY_RE = re.compile(r"^([dpcofgs]__.+)_[A-Z]+")
+GENERAL_POLY_RE = re.compile(r"^([dpcofgs]__[a-zA-Z0-9-]+)(_[0-9A-Z]+)?")
+SPECIES_POLY_RE = re.compile(r"^(s__.+) ([a-zA-Z0-9-]+)(_[0-9A-Z]+)?$")
+EXTRACT_POLY_GENUS = re.compile(r"^g__([a-zA-Z0-9-]+_[_A-Z0-9]+)$")
 
 
 def polyphyletic_unique(names):
@@ -847,8 +868,8 @@ def normalize_species_binomial(genus, species):
     def equal_ignoring_polytag(a, b):
         a = a.split('__', 1)[1]
         b = b.split('__', 1)[1]
-        a = a.rsplit('_', 1)[0]
-        b = b.rsplit('_', 1)[0]
+        a = a.split('_', 1)[0]
+        b = b.split('_', 1)[0]
         return a == b
 
     genus_from_species, species_from_species = species.split(' ', 1)
@@ -918,8 +939,6 @@ def correct_species_binomial(t):
                 continue
 
             corrected = normalize_species_binomial(genus_name, species_name)
-            if species_name != corrected:
-                print(species_name, corrected)
             names[-1] = corrected
             node.name = '; '.join(names)
 
@@ -1090,19 +1109,13 @@ class TaxaName(object):
         return request
 
 
-def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
-                      verbose=False, use_node_id=False):
-    """Appends on a unique number if multiple of the same names exist
-
-    ordered by number of tips, ie, _1 has more tips that _2
-
-    expects .BackFillNames to be set
-    """
+def make_names_unique(tree, suffix_glue_char='_',
+                      verbose=False):
+    """Appends on a unique number if multiple of the same names exist"""
     if verbose:
         print("Assigning unique tags to duplicate names...")
 
-    if use_node_id:
-        tree.assign_ids()
+    tree.assign_ids()
 
     # build up a dict of the names and how many tips descend
     name_lookup = {}
@@ -1110,33 +1123,20 @@ def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
         if node.name is None:
             continue
         else:
-            for idx, name in enumerate(node.BackFillNames):
+            for idx, name in enumerate(node.name.split('; ')):
                 if name not in name_lookup:
                     name_lookup[name] = []
-                name_info = ((node.TipStop - node.TipStart), idx, node)
-                name_lookup[name].append(name_info)
+                name_lookup[name].append(node.id)
 
-    # assign unique numbers based on the number of tips that descend
-    for name, scores_and_nodes in name_lookup.items():
-        sorted_scores = sorted(scores_and_nodes, key=lambda x: x[0])[::-1]
-        for count, (score, idx, node) in enumerate(sorted_scores):
-            # only assign a number of we have more than 1
-            if count > 0:
-                if node.BackFillNames[idx].split('__')[1] != '':
-                    if append_suffix:
-                        unique_name = suffix_glue_char.join(
-                            [node.BackFillNames[idx],
-                            str(node.id if use_node_id else count)])
-                        node.BackFillNames[idx] = unique_name
-
-    # should probably be refactored, but assign .name based on .BackFillNames
+    make_unique = {k for k, v in name_lookup.items() if len(v) > 1}
     for node in tree.non_tips(include_self=True):
-        if len(node.BackFillNames) == 0:
-            node.name = None
-        elif len(node.BackFillNames) == 1:
-            node.name = node.BackFillNames[0]
-        else:
-            node.name = '; '.join(node.BackFillNames)
+        if node.name is not None:
+            new_name = []
+            for name in node.name.split('; '):
+                if name in make_unique:
+                    name = f'{name}_{node.id}'
+                new_name.append(name)
+            node.name = '; '.join(new_name)
 
 
 def pull_consensus_strings(tree, verbose=False, append_prefix=True, as_tree=False):
