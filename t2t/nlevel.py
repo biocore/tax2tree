@@ -844,6 +844,13 @@ def normalize_species_binomial(genus, species):
         b = b.split('__', 1)[1]
         return a == b
 
+    def equal_ignoring_polytag(a, b):
+        a = a.split('__', 1)[1]
+        b = b.split('__', 1)[1]
+        a = a.rsplit('_', 1)[0]
+        b = b.rsplit('_', 1)[0]
+        return a == b
+
     genus_from_species, species_from_species = species.split(' ', 1)
 
     if genus_from_species == genus:
@@ -858,11 +865,10 @@ def normalize_species_binomial(genus, species):
         return species
 
     if genus_match and genus_from_species_match:
-        if not equal_ignoring_rank(genus, genus_from_species):
-            # we have a conflict in the binomial and the genus?
-            raise ValueError("%s, but we have %s" % (species, genus))
-        else:
+        if equal_ignoring_rank(genus, genus_from_species):
             return species
+        if not equal_ignoring_polytag(genus, genus_from_species):
+            raise ValueError("%s, but we have %s" % (species, genus))
 
     if genus_match:
         genus_with_poly = EXTRACT_POLY_GENUS.match(genus).groups()[0]
