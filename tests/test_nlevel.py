@@ -24,9 +24,17 @@ from t2t.nlevel import (load_consensus_map, collect_names_at_ranks_counts,
                         walk_consensus_tree, make_consensus_tree,
                         backfill_names_gap, commonname_promotion,
                         decorate_ntips, decorate_ntips_rank,
-                        name_node_score_fold,
+                        name_node_score_fold, backfill_from_secondary,
                         validate_all_paths, score_tree,
                         promote_to_multifurcation,
+                        recover_from_polyphyletic_sibling,
+                        _named_siblings, polyphyletic_unique,
+                        normalize_species_binomial,
+                        correct_species_binomial,
+                        equal_ignoring_polyphyletic,
+                        POLY_RE, GENERAL_POLY_RE, SPECIES_POLY_RE,
+                        EXTRACT_POLY_GENUS,
+                        make_names_unique,
                         lineage_cache, correct_decorated)
 
 from skbio import TreeNode
@@ -41,6 +49,62 @@ class NLevelTests(TestCase):
 
     def setUp(self):
         pass
+
+    def test_make_names_unique(self):
+        t = TreeNode.read(["((a,b)g__foo,(c,d)g__foo,(e,f)g__bar,(g,h)g__bar_A);"],
+                          convert_underscores=False)
+        exp = "((a,b)'g__foo_8',(c,d)'g__foo_9',(e,f)'g__bar',(g,h)'g__bar_A');\n"
+        make_names_unique(t)
+        self.assertEqual(str(t), str(exp))
+
+    def test_equal_ignoring_polyphyletic(self):
+        tests = [(('g__foo', 'g__foo'), True),
+                 (('g__foo', 'g__bar'), False),
+                 (('g__foo_A', 'g__foo'), True),
+                 (('g__foo_A', 'g__foo_1'), True),
+                 (('g__foo_A', 'g__foo_B'), True),
+                 (('s__foo_A bar', 's__foo_B bar'), True),
+                 (('s__foo bar', 's__foo bar'), True),
+                 (('s__foo bar_A', 's__foo_B bar_1234'), True),
+                 (('s__foo_A bar_B', 's__foo_B bar_X'), True),
+                 (('s__foo_A baz_B', 's__foo_B bar_X'), False),
+                 (('s__baz_A bar_B', 's__foo_B bar_X'), False)]
+        for (a, b), exp in tests:
+            self.assertEqual(equal_ignoring_polyphyletic(a, b), exp)
+
+    def test_check_regexs(self):
+        tests = [('g__foo', False, None),
+                 ('s__foo_A bar', True, ('s__foo', )),
+                 ('g__foo_A', True, ('g__foo', ))]
+
+        for in_, exp_match, exp_grp in tests:
+            obs = POLY_RE.match(in_)
+            if exp_match:
+                self.assertTrue(obs is not None)
+            if obs is not None:
+                self.assertEqual(obs.groups(), exp_grp)
+
+        tests = [('s__foo_A', ('s__foo', '_A')),
+                 ('s__foo_1234', ('s__foo', '_1234')),
+                 ('s__foo', ('s__foo', None))]
+
+        for in_, exp in tests:
+            obs = GENERAL_POLY_RE.match(in_)
+            self.assertEqual(obs.groups(), exp)
+
+        tests = [('s__foo_A bar', ('s__foo_A', 'bar', None)),
+                 ('s__foo bar_123', ('s__foo', 'bar', '_123'))]
+
+        for in_, exp in tests:
+            obs = SPECIES_POLY_RE.match(in_)
+            self.assertEqual(obs.groups(), exp)
+            #SPECIES_POLY_RE = re.compile(r"^(s__.+) (.+)(_[0-9A-Z]+)?$")
+
+        tests = [('g__foo_A', ('foo_A', )),
+                 ('g__foo_A_12', ('foo_A_12', ))]
+        for in_, exp in tests:
+            obs = EXTRACT_POLY_GENUS.match(in_)
+            self.assertEqual(obs.groups(), exp)
 
     def test_correct_decorated(self):
         truth = TreeNode.read(["(((a,b)s__foo,(c,d)s__bar_A)g__baz,((e,f)s__biz)g__cool);"],  # noqa
@@ -507,6 +571,102 @@ class NLevelTests(TestCase):
         lookup = dict([(n.name, n)
                       for n in consensus_tree.traverse(include_self=True)])
         # exp = "((((1),(2)),((3),(4))))'o1; f1';"
+
+    def test_polyphyletic_unique(self):
+        tests = [(['s__a', 's__b'], {'s__a', 's__b'}),
+                 (['s__a', 's__b', 's__c'], {'s__a', 's__b', 's__c'}),
+                 (['s__a'], {'s__a', }),
+                 (['s__a', 's__a_AA'], {'s__a_AA', }),
+                 (['s__a', 's__a_AA', 's__a_AB'], {'s__a', 's__a_AA', 's__a_AB'})]
+        for in_, exp in tests:
+            obs = polyphyletic_unique(in_)
+            self.assertEqual(obs, exp)
+
+    def test_correct_species_binomial(self):
+        t = TreeNode.read(["(((1,2)'s__foo bar',(3,4)'s__foo baz')g__foo_A,(5,6)g__baz,(((7)'s__baz thing',8)g__baz))root;"],  # noqa
+                          convert_underscores=False)
+        exp = TreeNode.read(["(((1,2)'s__foo_A bar',(3,4)'s__foo_A baz')g__foo_A,(5,6)g__baz,(((7)'s__baz thing',8)g__baz))root;"],  # noqa
+                            convert_underscores=False)
+        obs = correct_species_binomial(t)
+        self.assertEqual(str(obs), str(exp))
+
+    def test_normalize_species_binomial(self):
+        tests = [(('g__foo', 's__foo bar'), 's__foo bar'),
+                 (('g__foo_A', 's__foo bar'), 's__foo_A bar'),
+                 (('g__foo_A', 's__baz bar'), 's__baz bar'),  # do not create new species names!  # noqa
+                 (('g__foo_A', 's__foo_A bar'), 's__foo_A bar'),
+                 (('g__foo_A_12', 's__foo_A bar'), 's__foo_A_12 bar'),
+                 (('g__foo_A', 's__foo_A bar_A'), 's__foo_A bar_A'),
+                 (('g__foo', 's__foo bar_A'), 's__foo bar_A')]
+        for in_, exp in tests:
+            obs = normalize_species_binomial(*in_)
+            self.assertEqual(obs, exp)
+
+        # I think it is more correct to do this
+        #tests = [('g__foo_A', 's__foo_B bar'), ]
+        #for in_ in tests:
+        #    with self.assertRaises(ValueError):
+        #        normalize_species_binomial(*in_)
+
+    def test_named_siblings(self):
+        t = TreeNode.read(['(((1,2)s__A,(3,4)s__B)g__A,(5,6)g__B,((7,8)g__C))root;'],  # noqa
+                          convert_underscores=False)
+        t.assign_ids()
+        exp = [t.find('g__A'), t.find('g__C')]
+        obs = _named_siblings(t.find('g__B'))
+        self.assertEqual(obs, exp)
+
+    def test_recover_from_polyphyletic_sibling(self):
+        # map species and genus including on nested name
+        # do not map a substring (g__baz -> g__bazx)
+        t = TreeNode.read(["((((1,2)s__foo,(3,4)s__foo_A)'g__bar; f__baz',(5)'s__x; g__bar_A'),(6,7)g__baz,(8,9)g__bazx)root;"],  # noqa
+                          convert_underscores=False)
+        exp = TreeNode.read(["((((1,2)s__foo_A,(3,4)s__foo_A)'g__bar_A; f__baz',(5)'s__x; g__bar_A'),(6,7)g__baz,(8,9)g__bazx)root;"],  # noqa
+                            convert_underscores=False)
+        for n in t.traverse(include_self=False):
+            n.length = 0
+        for n in exp.traverse(include_self=False):
+            n.length = 0
+        obs = recover_from_polyphyletic_sibling(t)
+        self.assertEqual(str(obs), str(exp))
+
+        # two options so do not map
+        t = TreeNode.read(['((1,2)s__foo:0.1,(3,4)s__foo_A:0.2,(5,6)s__foo_B:0.3)root;'],
+                          convert_underscores=False)
+        exp = TreeNode.read(['((1,2)s__foo_A:0.1,(3,4)s__foo_A:0.2,(5,6)s__foo_B:0.3)root;'],
+                            convert_underscores=False)
+        obs = recover_from_polyphyletic_sibling(t)
+        self.assertEqual(str(obs), str(exp))
+
+    def test_backfill_from_secondary(self):
+        secondary_taxonomy = TreeNode.read(["((((l1,l2)s1,(l3)s2)g1,((l4)s3,(l5)s4)g2,((l6)s5,(l7)s6)g3)f1)o1;"])  # noqa
+        rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'd': 0}
+        for n in secondary_taxonomy.non_tips():
+            n.Rank = rank_lookup[n.name[0]]
+
+        # setup a bunch of state on the tree
+        tree = TreeNode.read(["(((X1,X2)s1,(l1,l2))f1,(((l3)),(l4,X3))f2)c1;"])
+        for n in tree.non_tips(include_self=True):
+            n.BackFillNames = []
+        tree.Rank = 2
+        tree.children[0].Rank = 4  # ((X1,X2),(l1,l2))
+        tree.children[0].BackFillNames = ['oX', 'f1']
+        tree.children[0].children[0].Rank = 6  # (X1,X2)
+        tree.children[0].children[0].BackFillNames = ['gX', 's1']
+        tree.children[0].children[1].Rank = None  # (l1,l2)
+        tree.children[1].Rank = 4  # (((l3)),(l4,X3))
+        tree.children[1].BackFillNames = ['f2']
+        tree.children[1].children[0].Rank = None  # ((l3))
+        tree.children[1].children[0].children[0].Rank = None  # (l3)
+        tree.children[1].children[1].Rank = None  # (l4,X3)
+        backfill_from_secondary(tree, secondary_taxonomy)
+
+        n = tree.find('l1').parent
+        self.assertEqual(n.BackFillNames, ['g1', 's1'])
+        n = tree.find('l3').parent
+        self.assertEqual(n.BackFillNames, ['g1', 's2'])
+        n = tree.find('l4').parent
+        self.assertEqual(n.BackFillNames, ['g2', 's3'])
 
     def test_commonname_promotion(self):
         """correctly promote names if possible"""

@@ -85,13 +85,29 @@ def _add_nameholders(tree):
               help="Minimum number of times a name needs to be represented")
 @click.option('--add-nameholder', is_flag=True, default=False,
               help="Add nameholder nodes if tips likely to be named")
+@click.option('--secondary-taxonomy', type=click.File('U'),
+              help="For backfilling with a secondary taxonomic system",
+              required=False)
+@click.option('--recover-polyphyletic', is_flag=True, default=False,
+              help="Attempt to map ambiguous to unambiguous polyphyletic names",  # noqa
+              required=False)
+@click.option('--correct-binomials', is_flag=True, default=False,
+              help="Attempt to correct species binomals",  # noqa
+              required=False)
 def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
-             placement, add_nameholder):
+             placement, add_nameholder, secondary_taxonomy,
+             recover_polyphyletic, correct_binomials):
     """Decorate a taxonomy onto a tree"""
     if tree is not None and placement is not None:
         raise ValueError("Cannot specify --tree and --placement")
     if tree is None and placement is None:
         raise ValueError("Must specify --tree or --placement")
+
+    if secondary_taxonomy:
+        secondary_taxonomy = list(nl.load_consensus_map(secondary_taxonomy, False).items())  # noqa
+        secondary_taxonomy = skbio.TreeNode.from_taxonomy(secondary_taxonomy)
+        for n in secondary_taxonomy.non_tips(include_self=False):
+            n.Rank = nl.RANK_ORDER.index(n.name[0])
 
     if placement:
         placement = json.loads(open(placement).read())
@@ -123,12 +139,23 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
 
     contree, contree_lookup = nl.make_consensus_tree(tipname_map.values())
     nl.backfill_names_gap(tree_, contree_lookup)
+
+    if secondary_taxonomy:
+        nl.backfill_from_secondary(tree_, secondary_taxonomy)
+
     nl.commonname_promotion(tree_)
+
+    if recover_polyphyletic:
+        tree_ = nl.recover_from_polyphyletic_sibling(tree_, verbose=True)
+
+    nl.correct_decorated(tree_, contree, verbose=True)
 
     if not no_suffix:
         nl.make_names_unique(tree_, suffix_glue_char=suffix_char)
+    
+    if correct_binomials:
+        tree_ = nl.correct_species_binomial(tree_)
 
-    nl.correct_decorated(tree_, contree, verbose=True) 
     constrings = nl.pull_consensus_strings(tree_)
 
     f = open(output + '-consensus-strings', 'w')

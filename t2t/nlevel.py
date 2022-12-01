@@ -4,6 +4,7 @@ from collections import defaultdict
 from operator import itemgetter
 from numpy import argmin, array, where
 from skbio import TreeNode
+from skbio.tree import MissingNodeError
 from t2t.util import unzip
 import re
 
@@ -37,12 +38,26 @@ def lineage_cache(t):
 
 
 def equal_ignoring_polyphyletic(name_a, name_b):
-    if name_a[-2] == '_':
-        name_a = name_a.rsplit('_', 1)[0]
-    if name_b[-2] == '_':
-        name_b = name_b.rsplit('_', 1)[0]
-    return name_a == name_b
+    """Tests true if names are equal ignoring presence of polyphyletic tag"""
+    name_a_match = GENERAL_POLY_RE.match(name_a)
+    name_b_match = GENERAL_POLY_RE.match(name_b)
 
+    if name_a_match is None or name_b_match is None:
+        raise ValueError("%s | %s" % (name_a, name_b))
+
+    name_a_base = name_a_match.groups()[0]
+    name_b_base = name_b_match.groups()[0]
+
+    if name_a_base != name_b_base:
+        return False
+
+    if name_a.startswith('s__'):
+        species_name_a = SPECIES_POLY_RE.match(name_a)
+        species_name_b = SPECIES_POLY_RE.match(name_b)
+
+        return species_name_a.groups()[1] == species_name_b.groups()[1]
+    else:
+        return True
 
 def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
     """Remove taxon if a violation with input taxonomy is observed"""
@@ -51,16 +66,25 @@ def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
     lineage_cache(input_taxonomy_tree)
     for n in decorated_tree.preorder(include_self=False):
         if n.name is not None and n.name[1:3] == '__':
-            input_node = input_taxonomy_tree.find(n.lineage_cache[-1])
+            try:
+                input_node = input_taxonomy_tree.find(n.lineage_cache[-1])
+            except MissingNodeError:
+                # the lineage must be in the secondary taxonomy, and we
+                # already assume the secondary taxonomy may vary
+                # relative to the input
+                continue
+
             if n.lineage_cache != input_node.lineage_cache:
                 for o, e in zip(n.lineage_cache, input_node.lineage_cache):
                     if not equal_ignoring_polyphyletic(o, e):
                         if verbose:
-                            print(f"OBSERVED: {n.lineage_cache}\n"
-                                  f"EXPECTED: {input_node.lineage_cache}\n"
-                                  "---")
+                            print(f"AFFECTED: {len(list(n.tips()))}\t"
+                                  f"EXAMPLE: {list(n.tips())[0].name}\t"
+                                  f"OBSERVED: {n.lineage_cache}\t"
+                                  f"EXPECTED: {input_node.lineage_cache}")
                         n.name = None
                         break
+
 
 
 def set_rank_order(order):
@@ -758,6 +782,169 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
     return names
 
 
+def backfill_from_secondary(tree, secondary_taxonomy):
+    # assumes backfill_names_gaps has already been run!
+    assert hasattr(tree, 'BackFillNames')
+
+    in_taxonomy = {n.name for n in secondary_taxonomy.tips()}
+    for tip in tree.tips():
+        if tip.name not in in_taxonomy:
+            continue
+
+        # get present lineage
+        lineage = []
+        for a in tip.ancestors():
+            if a.BackFillNames:
+                lineage.extend(a.BackFillNames[::-1])
+
+        most_specified = lineage[0]
+        if most_specified.startswith('s__'):
+            continue
+
+        most_specified_rank = RANK_ORDER.index(lineage[0][0])
+
+        # begin at species
+        node_in_taxonomy = secondary_taxonomy.find(tip.name).parent
+        missing = []
+        while node_in_taxonomy.Rank > most_specified_rank:
+            missing.append(node_in_taxonomy.name)
+            node_in_taxonomy = node_in_taxonomy.parent
+
+        # the tip cannot have backfillnames, but its parent can
+        # we extend in common order so, if the existing backfill
+        # contained ['o1', 'f1'], we could extend ['g1', 's1] without
+        # issue
+        tip.parent.BackFillNames.extend(missing[::-1])
+
+
+# gtdb uses A-Z, t2t can use numbers or letters
+# both will only pull the first name so use with caution with species labels
+POLY_RE = re.compile(r"^([dpcofgs]__.+)_[A-Z]+")
+GENERAL_POLY_RE = re.compile(r"^([dpcofgs]__[a-zA-Z0-9-]+)(_[0-9A-Z]+)?")
+SPECIES_POLY_RE = re.compile(r"^(s__.+) ([a-zA-Z0-9-]+)(_[0-9A-Z]+)?$")
+EXTRACT_POLY_GENUS = re.compile(r"^g__([a-zA-Z0-9-]+_[_A-Z0-9]+)$")
+
+
+def polyphyletic_unique(names):
+    """Allow a single polyphyletic name to exist in a unique
+
+    If we have "g__Bacillus" and "g__Bacillus_A", we match
+    them as the same, and return the polyphyletic variant (e.g.,
+    g__Bacillus_A). This allows for retaining, in the case of GTDB,
+    the existing used naming conventions
+    """
+    as_set = set(names)
+    if len(as_set) > 2:
+        return as_set
+    elif len(as_set) == 2:
+        a, b = list(as_set)
+        if a in b:
+            if POLY_RE.match(b):
+                return set([b, ])
+            else:
+                return as_set
+        elif b in a:
+            if POLY_RE.match(a):
+                return set([a, ])
+            else:
+                return as_set
+        else:
+            return as_set
+    else:
+        return as_set
+
+
+def normalize_species_binomial(genus, species):
+    """Correct a species binomial of the genus name is polyphyletic
+
+    We expect conflict here to arise from the secondary taxonomy which lacks
+    polyphyletic labels, but let's be defensive.
+    """
+    def equal_ignoring_rank(a, b):
+        a = a.split('__', 1)[1]
+        b = b.split('__', 1)[1]
+        return a == b
+
+    def equal_ignoring_polytag(a, b):
+        a = a.split('__', 1)[1]
+        b = b.split('__', 1)[1]
+        a = a.split('_', 1)[0]
+        b = b.split('_', 1)[0]
+        return a == b
+
+    genus_from_species, species_from_species = species.split(' ', 1)
+
+    if genus_from_species == genus:
+        return species
+
+    genus_match = POLY_RE.match(genus)
+    genus_from_species_match = POLY_RE.match(genus_from_species)
+
+    if genus_from_species_match and not genus_match:
+        # this can happen from name placement if the input taxonomy does not
+        # correspond well in this region to the phylogeny
+        return species
+
+    if genus_match and genus_from_species_match:
+        if equal_ignoring_rank(genus, genus_from_species):
+            return species
+        if not equal_ignoring_polytag(genus, genus_from_species):
+            raise ValueError("%s, but we have %s" % (species, genus))
+
+    if genus_match:
+        genus_with_poly = EXTRACT_POLY_GENUS.match(genus).groups()[0]
+        genus_match_group = genus_match.groups()[0]
+        genus_match_without_rank = genus_match_group.split('__', 1)[1]
+        genus_without_rank = genus_from_species.split('__', 1)[1]
+
+        if genus_match_without_rank not in genus_without_rank:
+            # this would happen if we place a species name under an unexpected
+            # genera, which is realistic. we should not create new species
+            # names
+            return species
+        else:
+            # we have a reasonable polyphyletic label
+
+            return f's__{genus_with_poly} {species_from_species}'
+    else:
+        # we do not have a polyphyletic genus so let's move on
+        return species
+
+
+def correct_species_binomial(t):
+    """Find all species labels, and correct if needed their binomials"""
+    def genus_ancestor(n):
+        # find the genus label from the nearest ancestor of a node
+        for a in n.ancestors():
+            if a.name is not None and 'g__' in a.name:
+                names = a.name.split('; ')
+                for name in names:
+                    if name.startswith('g__'):
+                        return name
+        else:
+            return None
+
+    for node in t.postorder(include_self=False):
+        if node.name is not None and 's__' in node.name:
+            names = node.name.split('; ')
+
+            # this would be super weird
+            if not names[-1].startswith('s__'):
+                raise ValueError(names)
+
+            species_name = names[-1]
+            genus_name = genus_ancestor(node)
+
+            if genus_name is None:
+                continue
+
+            corrected = normalize_species_binomial(genus_name, species_name)
+            names[-1] = corrected
+            node.name = '; '.join(names)
+
+    return t
+
+
 def commonname_promotion(tree):
     """Promote names if possible from BackFillNames"""
     for node in tree.preorder(include_self=True):
@@ -770,9 +957,6 @@ def commonname_promotion(tree):
             curr = queue.pop()
             if len(curr.BackFillNames) == 0:
                 queue.extend([c for c in curr.children[:] if not c.is_tip()])
-            elif len(curr.BackFillNames) == 1:
-                push_name = False
-                break
             else:
                 backfill_nodes.append(curr)
 
@@ -780,8 +964,9 @@ def commonname_promotion(tree):
         # we can and should put it on the deeper node
         while push_name:
             cur_name = [n.BackFillNames[0] for n in backfill_nodes]
-            if len(set(cur_name)) == 1:
-                node.BackFillNames.append(cur_name[0])
+            cur_name_unique = polyphyletic_unique(cur_name)
+            if len(cur_name_unique) == 1:
+                node.BackFillNames.append(list(cur_name_unique)[0])
 
                 for n in backfill_nodes:
                     n.BackFillNames.pop(0)
@@ -808,6 +993,109 @@ def commonname_promotion(tree):
             node.name = None
 
 
+def _named_siblings(node):
+    """Traverse the clade that node spans and return first named nodes
+
+    Identify all nearest named descendents of node
+    """
+    # assumes .id is set
+    # get first named ancestor
+    ancestor = None
+    for a in node.ancestors():
+        if a.name is not None and '__' in a.name:
+            ancestor = a
+            break
+
+        # worst case we use root
+        if a.parent is None:
+            ancestor = a
+            break
+
+    # find named descendents
+    marked_nodes = set()
+    named_sib = []
+    for desc in ancestor.preorder(include_self=False):
+        if desc is node:
+            marked_nodes.add(desc.id)
+            marked_nodes.update({c.id for c in desc.children})
+            continue
+
+        if desc.id in marked_nodes:
+            marked_nodes.update({c.id for c in desc.children})
+            continue
+
+        if desc.name is not None and '__' in desc.name:
+            named_sib.append(desc)
+            marked_nodes.add(desc.id)
+            marked_nodes.update({c.id for c in desc.children})
+
+    return named_sib
+
+
+def recover_from_polyphyletic_sibling(t, verbose=False):
+    """Test if a sibling has a polyphyletic name, and if so assume it
+
+    We only recover if there is a single polyphyletic name, we cannot
+    recover if there are multiple
+    """
+    def named_node(n):
+        return n.name is not None and '__' in n.name
+
+    # get all tree names
+    t.assign_ids()
+    t_names = {}
+    for n in t.traverse(include_self=True):
+        if named_node(n):
+            t_names[n.id] = n.name.split('; ')
+
+    # map poly to non-poly name
+    non_poly_names = {}
+    has_poly_name = set()
+    for k, v in t_names.items():
+        for name in v:
+            match = POLY_RE.match(name)
+            if match is not None:
+                base = match.groups()[0]
+                non_poly_names[name] = base
+                has_poly_name.add(base)
+
+    for node in t.traverse(include_self=True):
+        # if we have a valid named node
+        if named_node(node):
+            # get our already split names
+            names = t_names[node.id]
+
+            # for each name, check if it has a polyphyletic variant
+            # if so, gather all named siblings, and if there exists
+            # a single polyphyletic variant, replace our current name
+            # with it
+            for i, name in enumerate(names[:]):
+                if name in has_poly_name:
+                    sib_matches = []  # the actual matched names
+                    for sibling in _named_siblings(node):
+                        for sibname in sibling.name.split('; '):
+                            if sibname in non_poly_names and name in sibname:
+                                dist = node.distance(sibling)
+                                sib_matches.append((dist, sibname))
+
+                    if len(sib_matches) > 0:
+                        best_dist, best_name = sorted(sib_matches)[0]
+                        if verbose:
+                            print("mapping (node id: %d; %f) %s -> %s" % (node.id,  # noqa
+                                                                          best_dist,  # noqa
+                                                                          names[i],  # noqa
+                                                                          best_name))  # noqa
+                        names[i] = best_name
+            t_names[node.id] = names
+
+    # update names on the tree
+    for n in t.traverse(include_self=True):
+        if n.id in t_names:
+            n.name = '; '.join(t_names[n.id])
+
+    return t
+
+
 class TaxaName(object):
 
     """Support object to provide unique taxa names"""
@@ -821,16 +1109,13 @@ class TaxaName(object):
         return request
 
 
-def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
+def make_names_unique(tree, suffix_glue_char='_',
                       verbose=False):
-    """Appends on a unique number if multiple of the same names exist
-
-    ordered by number of tips, ie, _1 has more tips that _2
-
-    expects .BackFillNames to be set
-    """
+    """Appends on a unique number if multiple of the same names exist"""
     if verbose:
         print("Assigning unique tags to duplicate names...")
+
+    tree.assign_ids()
 
     # build up a dict of the names and how many tips descend
     name_lookup = {}
@@ -838,32 +1123,20 @@ def make_names_unique(tree, append_suffix=True, suffix_glue_char='_',
         if node.name is None:
             continue
         else:
-            for idx, name in enumerate(node.BackFillNames):
+            for idx, name in enumerate(node.name.split('; ')):
                 if name not in name_lookup:
                     name_lookup[name] = []
-                name_info = ((node.TipStop - node.TipStart), idx, node)
-                name_lookup[name].append(name_info)
+                name_lookup[name].append(node.id)
 
-    # assign unique numbers based on the number of tips that descend
-    for name, scores_and_nodes in name_lookup.items():
-        sorted_scores = sorted(scores_and_nodes, key=lambda x: x[0])[::-1]
-        for count, (score, idx, node) in enumerate(sorted_scores):
-            # only assign a number of we have more than 1
-            if count > 0:
-                if node.BackFillNames[idx].split('__')[1] != '':
-                    if append_suffix:
-                        unique_name = suffix_glue_char.join(
-                            [node.BackFillNames[idx], str(count)])
-                        node.BackFillNames[idx] = unique_name
-
-    # should probably be refactored, but assign .name based on .BackFillNames
+    make_unique = {k for k, v in name_lookup.items() if len(v) > 1}
     for node in tree.non_tips(include_self=True):
-        if len(node.BackFillNames) == 0:
-            node.name = None
-        elif len(node.BackFillNames) == 1:
-            node.name = node.BackFillNames[0]
-        else:
-            node.name = '; '.join(node.BackFillNames)
+        if node.name is not None:
+            new_name = []
+            for name in node.name.split('; '):
+                if name in make_unique:
+                    name = f'{name}_{node.id}'
+                new_name.append(name)
+            node.name = '; '.join(new_name)
 
 
 def pull_consensus_strings(tree, verbose=False, append_prefix=True, as_tree=False):
