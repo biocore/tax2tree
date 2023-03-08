@@ -7,7 +7,7 @@ make_consensus_tree
 etc...
 """
 from t2t.nlevel import RANK_ORDER
-from numpy import zeros, where, logical_or, long
+from numpy import zeros, where, logical_or, int_
 
 
 def taxa_score(master, reps):
@@ -83,7 +83,7 @@ def hash_cons(cons, order, n_ranks):
     at a field. The python hash method returns 0 on an empty string, but never
     otherwise and this method treats 0 specially.
     """
-    hashes = zeros((len(order), n_ranks), dtype=long)
+    hashes = zeros((len(order), n_ranks), dtype=int_)
 
     for idx, id_ in enumerate(order):
         try:
