@@ -195,7 +195,8 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
               type=click.File('U'))
 @click.option('--output', '-o', required=True, help='Result',
               type=click.File('w'))
-@click.option('--out-of-target', required=False, help='initial outgroup')
+@click.option('--out-of-target', is_flag=True, default=False, required=False, 
+              help='initial outgroup')
 @click.option('--placement', '-p', required=False, 
               help='Placement data, if specified, the tree will be sourced '
                    'from the jplace data')
@@ -218,10 +219,10 @@ def reroot(tree, tips, output, placement, out_of_target):
 
     # based on discussion with siavash, find a small set of out-of-target 
     # tips, root with them first, and then root with the target
-    if out_of_target is not None:
-        out_of_target = {n.strip() for n in open(out_of_target)}
-        tree_names = {n.name for n in tree_.tips()}
-        out_of_target = out_of_target & tree_names
+    if out_of_target:
+        tips = [len(list(c.tips())) for c in tree_.children]
+        clade = tree_.children[np.argmax(tips)]
+        out_of_target = [n.name for _, n in zip(range(10), clade.tips())]
         rerooted_1 = ut.reroot(tree_, out_of_target)
     else:
         rerooted_1 = tree_
