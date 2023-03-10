@@ -94,9 +94,12 @@ def _add_nameholders(tree):
 @click.option('--correct-binomials', is_flag=True, default=False,
               help="Attempt to correct species binomals",  # noqa
               required=False)
+@click.option('--save-bootstraps', is_flag=True, default=False,
+              help="Save any bootstrap values on the tree",  # noqa
+              required=False)
 def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
              placement, add_nameholder, secondary_taxonomy,
-             recover_polyphyletic, correct_binomials):
+             recover_polyphyletic, correct_binomials, save_bootstraps):
     """Decorate a taxonomy onto a tree"""
     if tree is not None and placement is not None:
         raise ValueError("Cannot specify --tree and --placement")
@@ -162,7 +165,8 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     f.write('\n'.join(constrings))
     f.close()
 
-    nl.save_bootstraps(tree_)
+    if save_bootstraps:
+        nl.save_bootstraps(tree_)
     tree_.write(output)
 
     f = open(output + '-fmeasures', 'w')
