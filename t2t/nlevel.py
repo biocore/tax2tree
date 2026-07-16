@@ -60,7 +60,15 @@ def equal_ignoring_polyphyletic(name_a, name_b):
         return True
 
 def correct_decorated(decorated_tree, input_taxonomy_tree, verbose=False):
-    """Remove taxon if a violation with input taxonomy is observed"""
+    """Remove taxon if a violation with input taxonomy is observed
+
+    On any lineage conflict the node's entire name is removed. If the node
+    carries a multi-rank label (e.g. 'g__X; s__Y') and only one rank conflicts,
+    the whole label -- including the non-conflicting ranks -- is dropped. This
+    is intentionally conservative: the conflict is typically a mis-pairing
+    (e.g. a species placed under the wrong genus), so removing only the
+    per-rank-mismatched component would let such mis-placements survive.
+    """
     # cache paths
     lineage_cache(decorated_tree)
     lineage_cache(input_taxonomy_tree)
@@ -366,8 +374,8 @@ def decorate_name_counts(tree):
 def set_ranksafe(tree):
     """Determines what ranks are safe for a given node
 
-    RankSafe is a len(RANK_ORDER) boolean list. True means at that rank, there
-    is only a single name with > 50% relative abundance
+    RankSafe is a len(RANK_ORDER) boolean list. A rank is flagged True when
+    exactly one name at that rank has a ConsensusRelFreq >= 0.5 under the node.
 
     Parameters
     ----------
@@ -782,7 +790,18 @@ def walk_consensus_tree(lookup, name, levels, reverse=True, verbose=False):
     return names
 
 
-def backfill_from_secondary(tree, secondary_taxonomy):
+def backfill_from_secondary(tree, secondary_taxonomy, verbose=False):
+    """Backfill finer ranks (e.g. species) from a secondary taxonomy
+
+    Assumes backfill_names_gap has already been run.
+
+    A name can only be placed on an internal node, so a species label can only
+    be backfilled onto a tip's parent. If that parent spans more than one
+    distinct species in the secondary taxonomy (tips of different species are
+    siblings with no intervening node), a single species placed there would
+    mislabel the siblings, so such tips are skipped. Give each tip its own
+    node with --add-nameholder to backfill species in that case.
+    """
     # assumes backfill_names_gaps has already been run!
     assert hasattr(tree, 'BackFillNames')
 
@@ -791,11 +810,30 @@ def backfill_from_secondary(tree, secondary_taxonomy):
         if tip.name not in in_taxonomy:
             continue
 
+        # refuse to place a single species name on a parent that spans more
+        # than one species in the secondary taxonomy (see docstring)
+        sibling_species = set()
+        for leaf in tip.parent.tips():
+            if leaf.name in in_taxonomy:
+                sibling_species.add(
+                    secondary_taxonomy.find(leaf.name).parent.name)
+        if len(sibling_species) > 1:
+            if verbose:
+                print("Skipping secondary backfill for %s: parent spans "
+                      "multiple species %s (consider --add-nameholder)"
+                      % (tip.name, sorted(sibling_species)))
+            continue
+
         # get present lineage
         lineage = []
         for a in tip.ancestors():
             if a.BackFillNames:
                 lineage.extend(a.BackFillNames[::-1])
+
+        # if no ancestor carries a decorated name there is nothing to anchor
+        # the secondary backfill against, so there is nothing we can do here
+        if not lineage:
+            continue
 
         most_specified = lineage[0]
         if most_specified.startswith('s__'):
@@ -889,7 +927,12 @@ def normalize_species_binomial(genus, species):
         if equal_ignoring_rank(genus, genus_from_species):
             return species
         if not equal_ignoring_polytag(genus, genus_from_species):
-            raise ValueError("%s, but we have %s" % (species, genus))
+            # the species' embedded genus and the ancestor genus are both
+            # polyphyletically tagged but have different base names. This
+            # happens when a species is placed under an unexpected genus; as
+            # elsewhere, we do not invent a new species binomial and leave the
+            # existing name unchanged rather than crash the decoration.
+            return species
 
     if genus_match:
         genus_with_poly = EXTRACT_POLY_GENUS.match(genus).groups()[0]
@@ -1074,7 +1117,8 @@ def recover_from_polyphyletic_sibling(t, verbose=False):
                     sib_matches = []  # the actual matched names
                     for sibling in _named_siblings(node):
                         for sibname in sibling.name.split('; '):
-                            if sibname in non_poly_names and name in sibname:
+                            if sibname in non_poly_names and \
+                                    non_poly_names[sibname] == name:
                                 dist = node.distance(sibling)
                                 sib_matches.append((dist, sibname))
 

@@ -597,7 +597,10 @@ class NLevelTests(TestCase):
                  (('g__foo_A', 's__foo_A bar'), 's__foo_A bar'),
                  (('g__foo_A_12', 's__foo_A bar'), 's__foo_A_12 bar'),
                  (('g__foo_A', 's__foo_A bar_A'), 's__foo_A bar_A'),
-                 (('g__foo', 's__foo bar_A'), 's__foo bar_A')]
+                 (('g__foo', 's__foo bar_A'), 's__foo bar_A'),
+                 # both genus and species-embedded-genus are poly tagged but
+                 # have different base names: leave unchanged, do not crash
+                 (('g__foo_A', 's__bar_B baz'), 's__bar_B baz')]
         for in_, exp in tests:
             obs = normalize_species_binomial(*in_)
             self.assertEqual(obs, exp)
@@ -638,6 +641,17 @@ class NLevelTests(TestCase):
         obs = recover_from_polyphyletic_sibling(t)
         self.assertEqual(str(obs), str(exp))
 
+    def test_recover_from_polyphyletic_sibling_prefix(self):
+        # a base name must only map to a polyphyletic variant of *itself*, not
+        # to a variant of a different name that merely shares a prefix. Here
+        # g__baz must map to g__baz_A, never to g__bazx_A.
+        t = TreeNode.read(["((1,2)g__baz:0.1,(3,4)g__baz_A:0.5,(5,6)g__bazx_A:0.2)root;"],  # noqa
+                          convert_underscores=False)
+        exp = TreeNode.read(["((1,2)g__baz_A:0.1,(3,4)g__baz_A:0.5,(5,6)g__bazx_A:0.2)root;"],  # noqa
+                            convert_underscores=False)
+        obs = recover_from_polyphyletic_sibling(t)
+        self.assertEqual(str(obs), str(exp))
+
     def test_backfill_from_secondary(self):
         secondary_taxonomy = TreeNode.read(["((((l1,l2)s1,(l3)s2)g1,((l4)s3,(l5)s4)g2,((l6)s5,(l7)s6)g3)f1)o1;"])  # noqa
         rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'd': 0}
@@ -667,6 +681,43 @@ class NLevelTests(TestCase):
         self.assertEqual(n.BackFillNames, ['g1', 's2'])
         n = tree.find('l4').parent
         self.assertEqual(n.BackFillNames, ['g2', 's3'])
+
+    def test_backfill_from_secondary_no_named_ancestor(self):
+        # a tip present in the secondary taxonomy but with no named ancestor in
+        # the decorated tree must be skipped rather than raise IndexError
+        secondary_taxonomy = TreeNode.read(["(((l1)s1)g1)f1;"])
+        rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'd': 0}
+        for n in secondary_taxonomy.non_tips(include_self=False):
+            n.Rank = rank_lookup[n.name[0]]
+
+        tree = TreeNode.read(["(l1,other);"])
+        for n in tree.non_tips(include_self=True):
+            n.BackFillNames = []
+
+        # should not raise
+        backfill_from_secondary(tree, secondary_taxonomy)
+        self.assertEqual(tree.find('l1').parent.BackFillNames, [])
+
+    def test_backfill_from_secondary_species_collision(self):
+        # two tips of DIFFERENT species share a parent with no intervening
+        # node; a single species cannot be placed there without mislabeling a
+        # sibling, so neither is backfilled (needs --add-nameholder)
+        secondary_taxonomy = TreeNode.read(
+            ["(((l1)s1,(l2)s2)g1)f1;"])
+        rank_lookup = {'s': 6, 'g': 5, 'f': 4, 'o': 3, 'c': 2, 'p': 1, 'd': 0}
+        for n in secondary_taxonomy.non_tips(include_self=False):
+            n.Rank = rank_lookup[n.name[0]]
+
+        # l1 and l2 are direct siblings under a genus node
+        tree = TreeNode.read(["((l1,l2),z);"])
+        for n in tree.non_tips(include_self=True):
+            n.BackFillNames = []
+        tree.children[0].BackFillNames = ['g1']
+
+        backfill_from_secondary(tree, secondary_taxonomy)
+
+        # no species was clobbered onto the shared parent
+        self.assertEqual(tree.children[0].BackFillNames, ['g1'])
 
     def test_commonname_promotion(self):
         """correctly promote names if possible"""

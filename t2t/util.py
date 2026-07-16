@@ -105,7 +105,7 @@ def reroot(tree, tipnames, tmp_nodename="TEMPORARY_ROOT_NODE_NAME"):
     new_node = parent.__class__()
     new_node.name = tmp_nodename
 
-    if hasattr(new_node, 'length') and new_node.length:
+    if node.length is not None:
         new_node.length = node.length / 2.0
         node.length = node.length / 2.0
     else:
