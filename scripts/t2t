@@ -144,7 +144,7 @@ def decorate(tree, consensus_map, output, no_suffix, suffix_char, min_count,
     nl.backfill_names_gap(tree_, contree_lookup)
 
     if secondary_taxonomy:
-        nl.backfill_from_secondary(tree_, secondary_taxonomy)
+        nl.backfill_from_secondary(tree_, secondary_taxonomy, verbose=True)
 
     nl.commonname_promotion(tree_)
 

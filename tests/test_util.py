@@ -43,6 +43,23 @@ class UtilTests(TestCase):
 
         self.assertEqual(str(obs).rstrip(), exp)
 
+    def test_reroot_splits_branch_length(self):
+        """The edge subtending the LCA should be split 50/50 at the new root"""
+        t = TreeNode.read(StringIO(u"(((a,b)c,(d,e)f)g,(h,i)j);"))
+        for n in t.traverse():
+            n.length = 1.0
+        obs = reroot(t, ['a', 'b'])
+
+        # the LCA of (a, b) is c; its original branch length (1.0) is split so
+        # half stays on c and half becomes the new root edge
+        self.assertEqual(obs.find('c').length, 0.5)
+
+        # the new root has two children: c and the remainder of the tree; the
+        # remainder edge carries the other half of the split
+        remainder = [child for child in obs.children
+                     if child is not obs.find('c')][0]
+        self.assertEqual(remainder.length, 0.5)
+
     def test_reroot_edges(self):
         t = bp.to_skbio_treenode(bp.parse_newick("(((a,b)c,(d,e)f)g,(h,i)j);"))
         tips = ['a', 'b']
